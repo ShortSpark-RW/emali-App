@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+    <string name="app_name">eMali Estates</string>
+    <string name="welcome_message">Bienvenue sur notre application !</string>
+    <string name="error_message">Une erreur est survenue. Veuillez réessayer.</string>
+
+    <!-- Example of escaping an apostrophe -->
+    <string name="example_apostrophe">C\'est une belle journée.</string>
+</resources>
