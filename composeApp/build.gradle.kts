@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.skie)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -37,6 +38,7 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.coil.network.okhttp)
             implementation(libs.androidx.core.splashscreen)
+            implementation(libs.android.material)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -54,19 +56,23 @@ kotlin {
             implementation(libs.runtime)
             implementation(libs.kotlinx.datetime)
             implementation(libs.koin.core)
+            implementation(libs.koin.androidx.compose)
             implementation(libs.coil.compose)
             api(libs.androidx.lifecycle.viewmodel)
             api(compose.foundation)
             api(compose.animation)
             implementation(libs.androidx.navigation.compose)
-            implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+            implementation(libs.material.icons.extended)
+
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.no.arg)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
-            implementation(libs.native.driver)
+            implementation(libs.sqldelight.ios)
 //            implementation(libs.coil.network.ktor)
         }
     }
@@ -101,4 +107,13 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+}
+
+
+sqldelight {
+    databases {
+        create("PropertyDatabase") {
+            packageName.set("com.shortspark.emaliestates.database")
+        }
+    }
 }

@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.shortspark.emaliestates.auth.presentation.SigninScreen
+import com.shortspark.emaliestates.home.presentation.HomeScreen
+import com.shortspark.emaliestates.home.presentation.MainScreen
 
 
 @Composable
@@ -20,23 +22,39 @@ fun AppNavGraph(
     ) {
         navigation(
             route = Graph.AUTHENTICATION,
-            startDestination = Screen.SignIn.route
+            startDestination = AuthScreen.SignIn.route
         ) {
-            composable(Screen.SignIn.route) {
+            composable(AuthScreen.SignIn.route) {
                 SigninScreen(navController)
             }
-            composable(Screen.SignUp.route) {
-                // TODO: Replace with your actual SignUpScreen
+            composable(AuthScreen.SignUp.route) {
                 Text("SignUp Screen")
             }
         }
         navigation(
-            route = Graph.HOME,
-            startDestination = Screen.Home.route
+            route = Graph.BASE,
+            startDestination = BaseScreen.Home.route
         ) {
-            composable(Screen.Home.route) {
-                // TODO: Replace with your actual HomeScreen
-                Text("Home Screen")
+            composable(BaseScreen.Home.route) {
+                MainScreen(
+                    navController = navController
+                )
+            }
+
+            composable(BaseScreen.Map.route) {
+                Text("Map Screen")
+            }
+
+            composable(BaseScreen.Tours.route) {
+                Text("Tours Screen")
+            }
+
+            composable(BaseScreen.Profile.route) {
+                HomeScreen()
+            }
+
+            composable(BaseScreen.Search.route) {
+                Text("Search Screen")
             }
         }
     }

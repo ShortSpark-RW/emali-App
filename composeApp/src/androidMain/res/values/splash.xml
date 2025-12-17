@@ -2,7 +2,7 @@
 <resources>
     <style name="Theme.eMaliEstates.MySplash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#FFFFFF</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>
-        <item name="postSplashScreenTheme">@android:style/Theme.Material.Light.NoActionBar</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen_night</item>
+        <item name="postSplashScreenTheme">@style/Theme.eMaliEstates</item>
     </style>
 </resources>

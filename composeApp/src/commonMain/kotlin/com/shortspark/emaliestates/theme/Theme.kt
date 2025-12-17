@@ -1,10 +1,22 @@
 package com.shortspark.emaliestates.theme
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
     primary = DarkAppColors.Primary,
@@ -34,6 +46,7 @@ private val LightColorScheme = lightColorScheme(
     onError = LightAppColors.OnError
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmaliEstatesTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -48,6 +61,25 @@ fun EmaliEstatesTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = typography,
-        content = content
+//        content = content
     )
+    {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            topBar = {},
+            contentWindowInsets = WindowInsets(0),
+            content = {
+                innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(innerPadding)
+                ) {
+                    content()
+                }
+            }
+        )
+    }
 }

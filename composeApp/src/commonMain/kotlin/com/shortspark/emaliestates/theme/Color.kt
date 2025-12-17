@@ -7,13 +7,14 @@ object LightAppColors {
     val PrimaryVariant = Color(0xFFC8C3C7)
     val Secondary = Color(0xFFFF7A00)
     val SecondaryVariant = Color(0xFFE66E00)
-    val Background = Color(0xFFFFFFFF)
+    val Background = Color(0xFFFFFBF5)
     val Surface = Color(0xFFFFFFFF)
     val Error = Color(0xFFB00020)
-    val OnPrimary = Color.Black
-    val OnSecondary = Color.White
+    val OnPrimary = Color(0xFF3C4043)
+    val OnSecondary = Color(0xFFFFFBF5)
     val OnBackground = Color.Black
     val OnSurface = Color.Black
+
     val OnError = Color.White
     val TextPrimary = Color(0xFF000000)
     val TextSecondary = Color(0xFF666666)
@@ -27,8 +28,8 @@ object DarkAppColors {
     val Background = Color(0xFF121212)
     val Surface = Color(0xFF121212)
     val Error = Color(0xFFCF6679)
-    val OnPrimary = Color.White
-    val OnSecondary = Color.White
+    val OnPrimary = Color(0xFFD1D1D1)
+    val OnSecondary = Color(0xFF121212)
     val OnBackground = Color.White
     val OnSurface = Color.White
     val OnError = Color.Black
