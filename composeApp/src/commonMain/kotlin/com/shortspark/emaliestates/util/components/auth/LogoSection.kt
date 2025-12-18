@@ -8,7 +8,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import emaliestates.composeapp.generated.resources.Res
 import emaliestates.composeapp.generated.resources.logo_emali
@@ -22,7 +24,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 @Preview
 fun LogoSection(
-    title: String,
+    title: String? = null,
     subtitle: String
 ) {
     val darkTheme = isSystemInDarkTheme()
@@ -33,19 +35,27 @@ fun LogoSection(
 
 
     Image(
-        modifier = Modifier.width(160.dp).height(160.dp),
+        modifier = Modifier.width(120.dp).height(120.dp),
         contentScale = ContentScale.FillWidth,
         painter = logo,
         contentDescription = "Pager Image",
     )
-    Text(
-        text = title,
-        style = MaterialTheme.typography.displayLarge,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-    )
+    if (title != null) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.displayLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
+            fontSize = MaterialTheme.typography.titleLarge.fontSize
+        )
+    }
     Text(
         text = subtitle,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-        style = MaterialTheme.typography.headlineSmall
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
+        style = MaterialTheme.typography.headlineSmall,
+        textAlign = TextAlign.Center,
+        fontSize = MaterialTheme.typography.titleMedium.fontSize,
+        lineHeight = MaterialTheme.typography.titleSmall.lineHeight
     )
 }

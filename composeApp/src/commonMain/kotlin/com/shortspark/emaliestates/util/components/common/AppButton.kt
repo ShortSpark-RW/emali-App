@@ -24,7 +24,7 @@ fun AppButton(
     enabled: Boolean = true,
     loading: Boolean = false,
     colors: ButtonColors = ButtonDefaults.buttonColors(),
-    shape: Shape = RoundedCornerShape(8.dp),
+    shape: Shape = RoundedCornerShape(15.dp),
     onClick: () -> Unit
 ) {
     Button(

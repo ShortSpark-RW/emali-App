@@ -41,25 +41,21 @@ import com.shortspark.emaliestates.util.components.auth.OrDivider
 import com.shortspark.emaliestates.util.components.auth.PasswordOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.SocialAuthButtons
 import com.shortspark.emaliestates.util.components.common.AppButton
-import emaliestates.composeapp.generated.resources.Res
-import emaliestates.composeapp.generated.resources.visibility
-import emaliestates.composeapp.generated.resources.visibility_off
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 
 @Composable
-fun SigninScreen(
+fun SignupScreen(
     navController: NavController,
 //    viewModel: AuthViewModel = hiltViewModel()
 ) {
 
-    SigninContent(navController)
+    SignupContent(navController)
 }
 
 @Composable
 @Preview(showBackground = true)
-fun SigninContent(
+fun SignupContent(
     navController: NavController = rememberNavController(),
 ) {
     var email by remember { mutableStateOf("") }
@@ -68,13 +64,10 @@ fun SigninContent(
     var passwordVisibility by remember { mutableStateOf(false) }
     var isEmailFocused by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
-
-
-    val icon = if (passwordVisibility)
-        painterResource(Res.drawable.visibility)
-    else
-        painterResource(Res.drawable.visibility_off)
-
+    var isConfirmPasswordFocused by remember { mutableStateOf(false) }
+    var confirmPassword by remember { mutableStateOf("") }
+    var confirmPasswordVisibility by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -86,11 +79,13 @@ fun SigninContent(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             Spacer(modifier = Modifier.height(16.dp))
+
             LogoSection(
-                title = "Welcome Back",
-                subtitle = "Sign in to your account"
+                subtitle = "Create a new account"
             )
+
             Spacer(modifier = Modifier.height(8.dp))
 
             EmailOutlinedTextField(
@@ -100,23 +95,43 @@ fun SigninContent(
                 onFocusChange = { isEmailFocused = it.isFocused },
                 imeAction = ImeAction.Next
             )
+
             Spacer(modifier = Modifier.height(12.dp))
 
             PasswordOutlinedTextField(
                 value = password,
                 onValueChange = {
                     password = it
+                    errorMessage = ""
                 },
-                isPasswordFocused = isPasswordFocused,
-                onFocusChange = { isPasswordFocused = it.isFocused },
                 label = "Password",
-                placeholder = "Type your password",
+                modifier = Modifier.fillMaxWidth(),
                 passwordVisibility = passwordVisibility,
                 onVisibilityChange = { passwordVisibility = it },
-                imeAction = ImeAction.Done
+                isPasswordFocused = isPasswordFocused,
+                imeAction = ImeAction.Next,
+                onFocusChange = { isPasswordFocused = it.isFocused }
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            PasswordOutlinedTextField(
+                value = confirmPassword,
+                onValueChange = {
+                    confirmPassword = it
+                    errorMessage = ""
+                },
+                label = "Confirm Password",
+                placeholder = "Confirm your password",
+                modifier = Modifier.fillMaxWidth(),
+                passwordVisibility = confirmPasswordVisibility,
+                onVisibilityChange = { confirmPasswordVisibility = it },
+                isPasswordFocused = isConfirmPasswordFocused,
+                imeAction = ImeAction.Done,
+                onFocusChange = { isConfirmPasswordFocused = it.isFocused }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier
@@ -168,11 +183,11 @@ fun SigninContent(
                     disabledContainerColor = Color.Gray,
                     disabledContentColor = Color.White
                 ),
-                text = "Sign In",
+                text = "Next",
                 textColor = MaterialTheme.colorScheme.onSecondary,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
                 onClick = {
-                    navController.navigate(BaseScreen.Home.route)
+                    navController.navigate(AuthScreen.SignUp2.route)
                 }
             )
 
@@ -189,22 +204,22 @@ fun SigninContent(
 
             Text(
                 buildAnnotatedString {
-                    append("Don't have an account?")
+                    append("Already have an accounrt?")
                     withStyle(
                         style = SpanStyle(
                             color = MaterialTheme.colorScheme.secondary,
                             fontWeight = FontWeight.Bold,
                         )
                     ) {
-                        append(" Sign up")
+                        append(" Sign in")
                     }
                 },
                 modifier = Modifier.clickable {
-                    navController.navigate(AuthScreen.SignUp.route)
+                    navController.navigate(AuthScreen.SignIn.route)
                 },
                 color = MaterialTheme.colorScheme.onBackground,
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
