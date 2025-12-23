@@ -28,25 +28,35 @@ class PropertySDK (
                     FRESH_DATA_KEY,
                     Clock.System.now().toEpochMilliseconds()
                 )
-                RequestState.Success(
-                    api.fetchAllProperties().also {
-                        database.removeAllProperties()
-                        database.insertAllProperties(it.data)
-                    }
-                )
+                val apiResponse = api.fetchAllProperties()
+                // Safely handle nullable data
+                apiResponse.data?.let { properties ->
+                    database.removeAllProperties()
+                    database.insertAllProperties(properties)
+                    RequestState.Success(properties)
+                } ?: RequestState.Error("Failed to fetch properties from the network.")
             } else {
                 if (isDataStale()) {
-                    RequestState.Success(
-                        api.fetchAllProperties().also {
-                            database.removeAllProperties()
-                            database.insertAllProperties(it.data)
-                        }
-                    )
-                } else RequestState.Success(cachedProperties)
+                    val apiResponse = api.fetchAllProperties()
+                    // Safely handle nullable data here as well
+                    apiResponse.data?.let { properties ->
+                        database.removeAllProperties()
+                        database.insertAllProperties(properties)
+                        RequestState.Success(properties)
+                    } ?: RequestState.Success(cachedProperties) // Fallback to stale cache if network fails
+                } else {
+                    RequestState.Success(cachedProperties)
+                }
             }
         } catch (e: Exception) {
-            RequestState.Error(e.message.toString())
-        } as RequestState<List<Property>>
+            // Check for cached data as a fallback on exception
+            val cachedProperties = database.readAllProperties()
+            if (cachedProperties.isNotEmpty()) {
+                RequestState.Success(cachedProperties)
+            } else {
+                RequestState.Error(e.message ?: "An unknown error occurred.")
+            }
+        }
     }
 
 

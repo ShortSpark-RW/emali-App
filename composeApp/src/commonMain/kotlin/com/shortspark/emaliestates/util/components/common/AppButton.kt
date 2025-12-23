@@ -36,7 +36,8 @@ fun AppButton(
     ) {
         if (loading) {
             CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(24.dp),
+                color = textColor,
                 strokeWidth = 2.dp
             )
         } else {

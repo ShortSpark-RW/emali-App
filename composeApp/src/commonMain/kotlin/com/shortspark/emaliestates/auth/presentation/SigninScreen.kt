@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,10 +31,13 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
+import com.shortspark.emaliestates.domain.RequestState
+import com.shortspark.emaliestates.domain.auth.User
 import com.shortspark.emaliestates.navigation.AuthScreen
 import com.shortspark.emaliestates.navigation.BaseScreen
 import com.shortspark.emaliestates.util.components.auth.EmailOutlinedTextField
@@ -41,44 +46,74 @@ import com.shortspark.emaliestates.util.components.auth.OrDivider
 import com.shortspark.emaliestates.util.components.auth.PasswordOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.SocialAuthButtons
 import com.shortspark.emaliestates.util.components.common.AppButton
-import emaliestates.composeapp.generated.resources.Res
-import emaliestates.composeapp.generated.resources.visibility
-import emaliestates.composeapp.generated.resources.visibility_off
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
 
+data class SignInUiState(
+    val email: String = "",
+    val password: String = "",
+    val rememberMe: Boolean = false,
+    val emailError: String? = null,
+    val passwordError: String? = null
+)
+
+private fun validateEmail(email: String): String? =
+    when {
+        email.isBlank() -> "Email is required"
+        !email.contains("@") -> "Enter a valid email"
+        else -> null
+    }
+
+private fun validatePassword(password: String): String? =
+    when {
+        password.isBlank() -> "Password is required"
+        password.length < 6 -> "Password must be at least 6 characters"
+        else -> null
+    }
 
 @Composable
 fun SigninScreen(
     navController: NavController,
-//    viewModel: AuthViewModel = hiltViewModel()
 ) {
+    val authViewModel = koinViewModel<AuthViewModel>()
+    val loginState by authViewModel.loginState
 
-    SigninContent(navController)
+    LaunchedEffect(loginState) {
+        if (loginState is RequestState.Success) {
+            navController.navigate(BaseScreen.Home.route) {
+                popUpTo(AuthScreen.SignIn.route) { inclusive = true }
+            }
+        }
+    }
+
+    SigninContent(
+        loginState = loginState,
+        onLogin = { email, password ->
+            authViewModel.login(email, password)
+        },
+        onSignup = {
+            navController.navigate(AuthScreen.SignUp.route)
+        },
+        onForgotPassword = {
+            navController.navigate(AuthScreen.ForgotPassword.route)
+        }
+    )
 }
 
 @Composable
 @Preview(showBackground = true)
 fun SigninContent(
-    navController: NavController = rememberNavController(),
+    loginState: RequestState<*> = RequestState.Idle,
+    onLogin: (String, String) -> Unit = { _, _ -> },
+    onForgotPassword: () -> Unit = {},
+    onSignup: () -> Unit = {}
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isChecked by remember { mutableStateOf(false) }
+    var state by remember { mutableStateOf(SignInUiState()) }
     var passwordVisibility by remember { mutableStateOf(false) }
     var isEmailFocused by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
 
-
-    val icon = if (passwordVisibility)
-        painterResource(Res.drawable.visibility)
-    else
-        painterResource(Res.drawable.visibility_off)
-
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
@@ -86,81 +121,87 @@ fun SigninContent(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+
             LogoSection(
                 title = "Welcome Back",
                 subtitle = "Sign in to your account"
             )
+
             Spacer(modifier = Modifier.height(8.dp))
 
-            EmailOutlinedTextField(
-                email = email,
-                onEmailChange = { email = it },
-                isEmailFocused = isEmailFocused,
-                onFocusChange = { isEmailFocused = it.isFocused },
-                imeAction = ImeAction.Next
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            PasswordOutlinedTextField(
-                value = password,
-                onValueChange = {
-                    password = it
-                },
-                isPasswordFocused = isPasswordFocused,
-                onFocusChange = { isPasswordFocused = it.isFocused },
-                label = "Password",
-                placeholder = "Type your password",
-                passwordVisibility = passwordVisibility,
-                onVisibilityChange = { passwordVisibility = it },
-                imeAction = ImeAction.Done
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(), // Optional padding
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start
-                ) {
-                    Checkbox(
-                        modifier = Modifier.padding(end = 2.dp),
-                        checked = isChecked,
-                        onCheckedChange = {
-                            isChecked = !isChecked
-                        },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = MaterialTheme.colorScheme.secondary,
-                            uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            checkmarkColor = MaterialTheme.colorScheme.primary,
-                            disabledUncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            disabledCheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            disabledIndeterminateColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        ),
-                    )
-                    Text(
-                        text = "Remember me",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+            /* ---------- API Error ---------- */
+            if (loginState is RequestState.Error) {
+                println(loginState.message)
                 Text(
-                    text = "Forgot Password?",
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.clickable {
-                        navController.navigate(AuthScreen.ForgotPassword.route)
-                    }
+                    text = loginState.message.toString(),
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
                 )
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            /* ---------- Email ---------- */
+            EmailOutlinedTextField(
+                email = state.email,
+                onEmailChange = {
+                    val emailError = validateEmail(it)
+                    state = state.copy(email = it, emailError = emailError)
+                },
+                isEmailFocused = isEmailFocused,
+                onFocusChange = { isEmailFocused = it.isFocused },
+                imeAction = ImeAction.Next,
+                errorMessage = state.emailError ?: "",
+                isError = state.emailError != null
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            /* ---------- Password ---------- */
+            PasswordOutlinedTextField(
+                value = state.password,
+                onValueChange = {
+                    val passwordError = validatePassword(it)
+                    state = state.copy(password = it, passwordError = passwordError)
+                },
+                isPasswordFocused = isPasswordFocused,
+                onFocusChange = { isPasswordFocused = it.isFocused },
+                passwordVisibility = passwordVisibility,
+                onVisibilityChange = { passwordVisibility = it },
+                imeAction = ImeAction.Done,
+                errorMessage = state.passwordError ?: "",
+                isError = state.passwordError != null
+            )
+
             Spacer(modifier = Modifier.height(6.dp))
 
+            /* ---------- Remember / Forgot ---------- */
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = state.rememberMe,
+                        onCheckedChange = {
+                            state = state.copy(rememberMe = it)
+                        }
+                    )
+                    Text("Remember me")
+                }
+
+                Text(
+                    text = "Forgot Password?",
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.clickable { onForgotPassword() }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            /* ---------- Submit ---------- */
             AppButton(
                 colors = ButtonColors(
                     containerColor = MaterialTheme.colorScheme.secondary,
@@ -169,43 +210,35 @@ fun SigninContent(
                     disabledContentColor = Color.White
                 ),
                 text = "Sign In",
+                modifier = Modifier.fillMaxWidth(),
                 textColor = MaterialTheme.colorScheme.onSecondary,
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
+                loading = loginState is RequestState.Loading,
                 onClick = {
-                    navController.navigate(BaseScreen.Home.route)
-                }
+
+                    onLogin(state.email, state.password)
+                },
             )
 
             OrDivider()
 
-            SocialAuthButtons(
-                onGoogleClick = {
-                    // Handle Google login
-                },
-                onFacebookClick = {},
-            )
+            SocialAuthButtons()
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 buildAnnotatedString {
                     append("Don't have an account?")
                     withStyle(
-                        style = SpanStyle(
+                        SpanStyle(
                             color = MaterialTheme.colorScheme.secondary,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Bold
                         )
                     ) {
                         append(" Sign up")
                     }
                 },
-                modifier = Modifier.clickable {
-                    navController.navigate(AuthScreen.SignUp.route)
-                },
-                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.clickable { onSignup() }
             )
-            
-            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }

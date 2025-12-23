@@ -193,12 +193,7 @@ fun SignupContent(
 
             OrDivider()
 
-            SocialAuthButtons(
-                onGoogleClick = {
-                    // Handle Google login
-                },
-                onFacebookClick = {},
-            )
+            SocialAuthButtons()
 
             Spacer(modifier = Modifier.height(8.dp))
 

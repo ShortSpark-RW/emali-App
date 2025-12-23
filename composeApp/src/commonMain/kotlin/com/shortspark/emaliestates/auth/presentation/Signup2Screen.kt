@@ -28,12 +28,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.shortspark.emaliestates.domain.Countries
 import com.shortspark.emaliestates.navigation.BaseScreen
+import com.shortspark.emaliestates.util.components.auth.Gender
+import com.shortspark.emaliestates.util.components.auth.GenderAndDobRow
 import com.shortspark.emaliestates.util.components.auth.LogoSection
+import com.shortspark.emaliestates.util.components.auth.PhoneNumberOutlinedTextField
 import com.shortspark.emaliestates.util.components.common.AppButton
 import com.shortspark.emaliestates.util.components.common.CommonOutlinedTextField
 import emaliestates.composeapp.generated.resources.Res
 import emaliestates.composeapp.generated.resources.email_icon
+import emaliestates.composeapp.generated.resources.full_name
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -54,6 +59,16 @@ fun Signup2Content(
 ) {
     var fullname by remember { mutableStateOf("") }
     var isFullnameFocused by remember { mutableStateOf(false) }
+    var phoneNumber by remember { mutableStateOf("") }
+    var isPhoneNumberFocused by remember { mutableStateOf(false) }
+    var selectedCountry by remember { mutableStateOf(Countries[144]) }
+
+    var gender by remember { mutableStateOf(Gender.MALE) }
+    var day by remember { mutableStateOf(15) }
+    var month by remember { mutableStateOf(5) }
+    var year by remember { mutableStateOf(1994) }
+
+
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -86,7 +101,7 @@ fun Signup2Content(
                         onClick = {}
                     ) {
                         Icon(
-                            painter = painterResource(Res.drawable.email_icon),
+                            painter = painterResource(Res.drawable.full_name),
                             contentDescription = "Fullname Icon",
                             tint = if (isFullnameFocused) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                         )
@@ -98,9 +113,33 @@ fun Signup2Content(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text("Field 2")
+            PhoneNumberOutlinedTextField(
+                phoneNumber = phoneNumber,
+                onPhoneNumberChange = { phoneNumber = it },
+
+                selectedCountry = selectedCountry,
+
+                onCountrySelected = { newCountry ->
+                    selectedCountry = newCountry
+                },
+
+                isFocused = isPhoneNumberFocused,
+                onFocusChange = { isPhoneNumberFocused = it.isFocused },
+
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            GenderAndDobRow(
+                gender = gender,
+                onGenderChange = { gender = it },
+                day = day,
+                month = month,
+                year = year,
+                onDayChange = { day = it },
+                onMonthChange = { month = it },
+                onYearChange = { year = it }
+            )
 
             Spacer(modifier = Modifier.height(6.dp))
 
@@ -111,7 +150,7 @@ fun Signup2Content(
                     disabledContainerColor = Color.Gray,
                     disabledContentColor = Color.White
                 ),
-                text = "Next",
+                text = "Register",
                 textColor = MaterialTheme.colorScheme.onSecondary,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
                 onClick = {

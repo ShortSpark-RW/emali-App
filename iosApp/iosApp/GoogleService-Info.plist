@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>241854445544-s2cstgdrq0a6bl3nsgfnmmoglb36dtkc.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.241854445544-s2cstgdrq0a6bl3nsgfnmmoglb36dtkc</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>241854445544-odeqrhije6f366g8hn2mricqnv2ehaum.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDWyvjXCviRO_5qHiBJaqcR-zCOHGAoHHs</string>
+	<key>GCM_SENDER_ID</key>
+	<string>241854445544</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.shortspark.emaliestates.eMaliEstates</string>
+	<key>PROJECT_ID</key>
+	<string>emali-estates</string>
+	<key>STORAGE_BUCKET</key>
+	<string>emali-estates.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:241854445544:ios:a7b310ec6e1eba8ebcd65d</string>
+</dict>
+</plist>

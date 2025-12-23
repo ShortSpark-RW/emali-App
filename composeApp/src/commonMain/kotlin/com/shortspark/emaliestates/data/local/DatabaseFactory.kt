@@ -19,6 +19,7 @@ class LocalDatabase(
     )
 
     private val query = database.propertyDatabaseQueries
+    val authTokenQueries = database.authTokenQueries
 
     @OptIn(ExperimentalTime::class)
     fun readAllProperties(): List<Property> {
@@ -112,4 +113,28 @@ class LocalDatabase(
     fun removeAllProperties() {
         query.removeAllProperties()
     }
+
+    fun getToken() =
+        authTokenQueries.getToken().executeAsOneOrNull()
+
+    fun clearToken() =
+        authTokenQueries.clearToken()
+
+    fun insertToken(
+        accessToken: String,
+        refreshToken: String?,
+        expiresAt: String
+    ) {
+        if (accessToken.isBlank()) return
+
+        authTokenQueries.transaction {
+            authTokenQueries.clearToken()
+            authTokenQueries.insertToken(
+                accessToken = accessToken,
+                refreshToken = refreshToken ?: "",
+                expiresAt = expiresAt
+            )
+        }
+    }
+
 }

@@ -18,7 +18,7 @@ class MainViewModel(
 
     init {
         viewModelScope.launch {
-            allProperties.value = sdk.getAllProperties() as RequestState<List<Property>>
+            allProperties.value = sdk.getAllProperties()
         }
     }
 }

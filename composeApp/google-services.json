@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "241854445544",
+    "project_id": "emali-estates",
+    "storage_bucket": "emali-estates.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:241854445544:android:f0c613691d7f0108bcd65d",
+        "android_client_info": {
+          "package_name": "com.shortspark.emaliestates"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "241854445544-odeqrhije6f366g8hn2mricqnv2ehaum.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shortspark.emaliestates",
+            "certificate_hash": "87ce504b1a1e2230028b024db2906539e6831341"
+          }
+        },
+        {
+          "client_id": "241854445544-qkdntigscq3taqbj2jk5u03k3761gp3e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTqsozZRgGg3Rc7otxmay9d0eEfYmkxXk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "241854445544-qkdntigscq3taqbj2jk5u03k3761gp3e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

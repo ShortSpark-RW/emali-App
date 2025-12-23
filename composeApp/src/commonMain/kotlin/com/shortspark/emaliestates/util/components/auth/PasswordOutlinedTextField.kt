@@ -1,5 +1,6 @@
 package com.shortspark.emaliestates.util.components.auth
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,89 +44,108 @@ fun PasswordOutlinedTextField(
     modifier: Modifier = Modifier,
     passwordVisibility: Boolean,
     onVisibilityChange: (Boolean) -> Unit,
-    onDone: () -> Unit = {},
     enabled: Boolean = true,
     isError: Boolean = false,
     icon: @Composable () -> Unit = {},
-    imeAction: ImeAction
+    imeAction: ImeAction,
+    errorMessage: String = "",
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .onFocusChanged { focusState ->
-                onFocusChange(focusState)
+    Column {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .onFocusChanged { focusState ->
+                    onFocusChange(focusState)
+                },
+            enabled = enabled,
+            isError = isError,
+            placeholder = {
+                Text(
+                    text = placeholder,
+                    style = TextStyle(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        lineHeight = 12.sp,
+                        fontSize = 14.sp,
+                    ),
+                )
             },
-        enabled = enabled,
-        isError = isError,
-        placeholder = {
-            Text(
-                text = placeholder,
-                style = TextStyle(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    lineHeight = 12.sp,
-                    fontSize = 14.sp,
-                ),
-            )
-        },
-        label = { Text(text = label) },
-        singleLine = true,
-        shape = RoundedCornerShape(15.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f),
-            focusedLabelColor = MaterialTheme.colorScheme.secondary,
-            cursorColor = MaterialTheme.colorScheme.secondary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-        ),
-        visualTransformation = if (passwordVisibility)
-            VisualTransformation.None
-        else
-            PasswordVisualTransformation(),
+            label = { Text(text = label) },
+            singleLine = true,
+            shape = RoundedCornerShape(15.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f),
+                focusedLabelColor = MaterialTheme.colorScheme.secondary,
+                cursorColor = MaterialTheme.colorScheme.secondary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                errorBorderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.4f),
+            ),
+            visualTransformation = if (passwordVisibility)
+                VisualTransformation.None
+            else
+                PasswordVisualTransformation(),
 
-        leadingIcon = {
-            IconButton(
-                onClick = {}
-            ) {
-                Icon(
-                    painter = painterResource(Res.drawable.lock_icon),
-                    contentDescription = "Lock Icon",
-                    tint = if (isPasswordFocused) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-                )
-            }
-        },
+            leadingIcon = {
+                IconButton(
+                    onClick = {}
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.lock_icon),
+                        contentDescription = "Lock Icon",
+                        tint = if (isPasswordFocused) MaterialTheme.colorScheme.secondary
+                        else if (isPasswordFocused && isError) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            },
 
 
-        trailingIcon = {
-            IconButton(onClick = {
-                onVisibilityChange(!passwordVisibility)
+            trailingIcon = {
+                IconButton(onClick = {
+                    onVisibilityChange(!passwordVisibility)
 //                passwordVisibility = !passwordVisibility
-            }) {
-                Icon(
-                    imageVector = if (passwordVisibility) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                    contentDescription = "Visibility Icon",
-                    tint = if (isPasswordFocused || passwordVisibility) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-            }
-        },
+                }) {
+                    Icon(
+                        imageVector = if (passwordVisibility) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = "Visibility Icon",
+                        tint = if (isPasswordFocused || passwordVisibility) MaterialTheme.colorScheme.secondary
+                        else if ((isPasswordFocused || passwordVisibility) && isError) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            },
 
-        textStyle = TextStyle(
-            color = MaterialTheme.colorScheme.onBackground,
-            lineHeight = 12.sp,
-            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-        ),
+            textStyle = TextStyle(
+                color = MaterialTheme.colorScheme.onBackground,
+                lineHeight = 12.sp,
+                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+            ),
 
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Password,
-            imeAction = imeAction
-        ),
-        keyboardActions = KeyboardActions(
-            onDone = {
-                    println("Done")
-            }
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = imeAction
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                        defaultKeyboardAction(ImeAction.Done)
+                }
+            ),
+//        supportingText = {
+//            if (isError) {
+//                Text(
+//                    text = errorMessage,
+//                    color = MaterialTheme.colorScheme.error,
+//                )
+//            }
+//        }
         )
-
-
-    )
+        if (isError) {
+            FieldSubText(
+                text = errorMessage,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
 }

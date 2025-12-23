@@ -1,5 +1,5 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -9,6 +9,13 @@ plugins {
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.skie)
     alias(libs.plugins.sqldelight)
+}
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
 }
 
 kotlin {
@@ -26,6 +33,8 @@ kotlin {
             export(libs.androidx.lifecycle.viewmodel)
             baseName = "ComposeApp"
             isStatic = true
+
+            export("io.github.sunildhiman90:kmauth-supabase:0.3.1")
         }
     }
     
@@ -66,6 +75,11 @@ kotlin {
 
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.no.arg)
+            implementation(libs.kmauth.google.compose)
+            implementation(libs.kmauth.google)
+            implementation(libs.ktor.client.auth)
+            implementation(libs.ktor.client.logging)
+            api("io.github.sunildhiman90:kmauth-supabase:0.3.1")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -75,6 +89,10 @@ kotlin {
             implementation(libs.sqldelight.ios)
 //            implementation(libs.coil.network.ktor)
         }
+    }
+
+    sourceSets.all {
+        languageSettings.optIn("kotlin.experimental.ExperimentalObjCName")
     }
 }
 
@@ -88,6 +106,16 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+
+        // ADD THESE LINES:
+        // Pass values from local.properties into the generated Android BuildConfig.
+        // The escaped quotes \"...\" are crucial for String values.
+        buildConfigField("String", "WEB_CLIENT_ID", "\"${localProperties.getProperty("webClientId", "")}\"")
+        buildConfigField("String", "WEB_CLIENT_SECRET", "\"${localProperties.getProperty("webClientSecret", "")}\"")
+        buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("supabaseUrl", "")}\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"${localProperties.getProperty("supabaseKey", "")}\"")
+        // Use "apiEndpoint" as defined in your old task
+        buildConfigField("String", "ALL_PROPERTIES_ENDPOINT", "\"${localProperties.getProperty("apiEndpoint", "")}\"")
     }
     packaging {
         resources {
@@ -102,6 +130,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 }
 

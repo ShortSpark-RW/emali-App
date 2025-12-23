@@ -1,0 +1,15 @@
+CREATE TABLE AuthToken (
+    id INTEGER NOT NULL PRIMARY KEY,
+    accessToken TEXT NOT NULL,
+    refreshToken TEXT NOT NULL,
+    expiresAt TEXT NOT NULL
+);
+
+insertToken:
+INSERT OR REPLACE INTO AuthToken(id, accessToken, refreshToken, expiresAt) VALUES (0, ?, ?, ?);
+
+getToken:
+SELECT * FROM AuthToken WHERE id = 0;
+
+clearToken:
+DELETE FROM AuthToken WHERE id = 0;

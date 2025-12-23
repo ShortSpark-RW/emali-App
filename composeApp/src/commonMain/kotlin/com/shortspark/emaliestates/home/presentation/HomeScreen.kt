@@ -81,17 +81,13 @@ fun HomeScreen() {
                 ) {
                     Text(
                         modifier = Modifier.fillMaxWidth(),
-                        text = "Error: ${state.error}", // Display error message
+                        text = "Error: ${state.message}", // Display error message
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
             is RequestState.Idle, is RequestState.Loading -> { // Handle Idle and Loading states
-                CircularProgressIndicator()
-            }
-
-            else -> {
                 CircularProgressIndicator()
             }
         }

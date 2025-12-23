@@ -1,8 +1,10 @@
 package com.shortspark.emaliestates.util.components.auth
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,54 +33,71 @@ fun EmailOutlinedTextField(
     onFocusChange: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
     errorMessage: String = "",
-    imeAction: ImeAction
+    imeAction: ImeAction,
+    isError: Boolean = false
 ) {
-    OutlinedTextField(
-        value = email,
-        onValueChange = onEmailChange,
-        label = { Text("Email address") },
-        placeholder = {
-            Text(
-                text = "Type your email address",
-                style = TextStyle(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    lineHeight = 12.sp,
-                    fontSize = 14.sp,
-                ),
-            )
-        },
-        leadingIcon = {
-            IconButton(
-                onClick = {}
-            ) {
-                Icon(
-                    painter = painterResource(Res.drawable.email_icon),
-                    contentDescription = "Email Icon",
-                    tint = if (isEmailFocused) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+    Column {
+        OutlinedTextField(
+            value = email,
+            onValueChange = onEmailChange,
+            label = { Text("Email address") },
+            placeholder = {
+                Text(
+                    text = "Type your email address",
+                    style = TextStyle(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        lineHeight = 12.sp,
+                        fontSize = 14.sp,
+                    ),
                 )
-            }
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .onFocusChanged { focusState ->
-                onFocusChange(focusState)
             },
-        shape = RoundedCornerShape(15.dp),
-        singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f),
-            focusedLabelColor = MaterialTheme.colorScheme.secondary,
-            cursorColor = MaterialTheme.colorScheme.secondary,
-        ),
-        textStyle = TextStyle(
-            color = MaterialTheme.colorScheme.onBackground,
-            lineHeight = 12.sp,
-            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-        ),
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Email,
-            imeAction = imeAction
-        ),
-    )
+            leadingIcon = {
+                IconButton(
+                    onClick = {}
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.email_icon),
+                        contentDescription = "Email Icon",
+                        tint = if (isEmailFocused) MaterialTheme.colorScheme.secondary
+                        else if (isEmailFocused && isError) MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
+                        else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                    )
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .onFocusChanged { focusState ->
+                    onFocusChange(focusState)
+                },
+            shape = RoundedCornerShape(15.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f),
+                focusedLabelColor = MaterialTheme.colorScheme.secondary,
+                cursorColor = MaterialTheme.colorScheme.secondary,
+
+                errorBorderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.4f),
+            ),
+            textStyle = TextStyle(
+                color = MaterialTheme.colorScheme.onBackground,
+                lineHeight = 12.sp,
+                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = imeAction
+            ),
+            keyboardActions = KeyboardActions {
+                defaultKeyboardAction(ImeAction.Next)
+            },
+            isError = isError,
+        )
+        if (isError) {
+            FieldSubText(
+                text = errorMessage,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
 }
