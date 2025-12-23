@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import com.codingfeline.buildkonfig.compiler.FieldSpec
 import java.util.Properties
 
 plugins {
@@ -9,22 +10,19 @@ plugins {
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.skie)
     alias(libs.plugins.sqldelight)
-}
-
-val localProperties = Properties().apply {
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        localPropertiesFile.inputStream().use { load(it) }
-    }
+    alias(libs.plugins.buildKonfig)
 }
 
 kotlin {
     androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+        // FIX: Configure JVM target here using compilations
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "11"
+            }
         }
     }
-    
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -33,11 +31,10 @@ kotlin {
             export(libs.androidx.lifecycle.viewmodel)
             baseName = "ComposeApp"
             isStatic = true
-
             export("io.github.sunildhiman90:kmauth-supabase:0.3.1")
         }
     }
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(compose.preview)
@@ -87,7 +84,6 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.sqldelight.ios)
-//            implementation(libs.coil.network.ktor)
         }
     }
 
@@ -106,16 +102,6 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
-
-        // ADD THESE LINES:
-        // Pass values from local.properties into the generated Android BuildConfig.
-        // The escaped quotes \"...\" are crucial for String values.
-        buildConfigField("String", "WEB_CLIENT_ID", "\"${localProperties.getProperty("webClientId", "")}\"")
-        buildConfigField("String", "WEB_CLIENT_SECRET", "\"${localProperties.getProperty("webClientSecret", "")}\"")
-        buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("supabaseUrl", "")}\"")
-        buildConfigField("String", "SUPABASE_KEY", "\"${localProperties.getProperty("supabaseKey", "")}\"")
-        // Use "apiEndpoint" as defined in your old task
-        buildConfigField("String", "ALL_PROPERTIES_ENDPOINT", "\"${localProperties.getProperty("apiEndpoint", "")}\"")
     }
     packaging {
         resources {
@@ -132,15 +118,31 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    // REMOVED: kotlinOptions { ... } block from here.
+    // It is now handled in the kotlin { androidTarget { ... } } block above.
+
     buildFeatures {
         buildConfig = true
     }
 }
 
-dependencies {
-    debugImplementation(compose.uiTooling)
-}
+buildkonfig {
+    packageName = "com.shortspark.emaliestates"
 
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { localProperties.load(it) }
+    }
+
+    defaultConfigs {
+        buildConfigField(FieldSpec.Type.STRING, "WEB_CLIENT_ID", localProperties.getProperty("webClientId") ?: "")
+        buildConfigField(FieldSpec.Type.STRING, "WEB_CLIENT_SECRET", localProperties.getProperty("webClientSecret") ?: "")
+        buildConfigField(FieldSpec.Type.STRING, "SUPABASE_URL", localProperties.getProperty("supabaseUrl") ?: "")
+        buildConfigField(FieldSpec.Type.STRING, "SUPABASE_KEY", localProperties.getProperty("supabaseKey") ?: "")
+        buildConfigField(FieldSpec.Type.STRING, "ALL_PROPERTIES_ENDPOINT", localProperties.getProperty("apiEndpoint") ?: "")
+    }
+}
 
 sqldelight {
     databases {
