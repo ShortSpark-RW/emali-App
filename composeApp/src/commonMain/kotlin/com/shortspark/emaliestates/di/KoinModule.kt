@@ -10,17 +10,28 @@ import com.shortspark.emaliestates.data.remote.AuthApi
 import com.shortspark.emaliestates.data.remote.HttpClientFactory
 import com.shortspark.emaliestates.data.remote.PropertyApi
 import com.shortspark.emaliestates.data.repository.AuthRepository
+import com.shortspark.emaliestates.data.repository.PropertyRepository
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import com.sunildhiman90.kmauth.google.GoogleAuthManager // Import this
+import com.sunildhiman90.kmauth.google.KMAuthGoogle
 
 expect val targetModule: Module
 
+@OptIn(ExperimentalTime::class)
 val sharedModule = module {
     // Settings
     single<Settings> { Settings() }
+
+    single<GoogleAuthManager> { KMAuthGoogle.googleAuthManager }
+
+    // Clock
+    single<Clock> { Clock.System }
 
     // Database - needs to be created before AuthRepository
     single {
@@ -54,18 +65,27 @@ val sharedModule = module {
 
     // Auth ViewModel - depends on AuthSDK
     viewModel {
-        AuthViewModel(sdk = get())
+        AuthViewModel(
+            sdk = get(),
+            googleAuthManager = get(),
+        )
     }
 
     // Property API - depends on HttpClient
     single<PropertyApi> { PropertyApi(get()) }
 
+    // Property Repository - depends on LocalDatabase
+    single<PropertyRepository> {
+        PropertyRepository(get())
+    }
+
     // Property SDK - depends on PropertyApi, LocalDatabase, and Settings
     single<PropertySDK> {
         PropertySDK(
             api = get(),
-            database = get(),
-            settings = get()
+            repository = get(),
+            settings = get(),
+            clock = get()
         )
     }
 

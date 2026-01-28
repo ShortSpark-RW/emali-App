@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,20 +26,30 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
+import com.shortspark.emaliestates.data.remote.AuthApi
+import com.shortspark.emaliestates.data.repository.AuthRepository
 import com.shortspark.emaliestates.home.presentation.bottomNavigation.bottomNavItems
 import com.shortspark.emaliestates.navigation.BaseScreen
 import com.shortspark.emaliestates.navigation.Graph
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @Composable
 fun MainScreen(
     navController: NavController
 ) {
+    val authRepository: AuthRepository = koinInject()
+    val authViewModel = koinInject<AuthViewModel>()
+
+
     var selected by remember {
         mutableIntStateOf(0)
     }
 
     val rootNavController = rememberNavController()
     val navBackStackEntry by rootNavController.currentBackStackEntryAsState()
+
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -90,6 +101,7 @@ fun MainScreen(
             }
         }
     ) {
+        val token = authRepository.getToken()
 
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -100,11 +112,15 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = {
-                    navController.navigate(Graph.AUTHENTICATION)
+                    if (token != null) {
+                        navController.navigate(BaseScreen.Profile.route)
+                    } else {
+                        navController.navigate(Graph.AUTHENTICATION)
+                    }
                 }
             ) {
 
-                Text("Sign In")
+                Text("Sign In/Profile")
             }
 
             Button(
@@ -114,6 +130,23 @@ fun MainScreen(
             ) {
 
                 Text("Base Screen")
+            }
+
+            if (token != null) {
+                Button(
+                    onClick = {
+                        // 3. Perform Logout
+                        authViewModel.logout()
+
+                        // 4. Navigate back to Login Screen
+                        navController.navigate(Graph.AUTHENTICATION) {
+                            // Clear the backstack so they can't press "Back" to return here
+                            popUpTo(Graph.BASE) { inclusive = true }
+                        }
+                    },
+                ) {
+                    Text("Sign Out")
+                }
             }
         }
     }

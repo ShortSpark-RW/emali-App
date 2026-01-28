@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +41,7 @@ import com.shortspark.emaliestates.domain.RequestState
 import com.shortspark.emaliestates.domain.auth.User
 import com.shortspark.emaliestates.navigation.AuthScreen
 import com.shortspark.emaliestates.navigation.BaseScreen
+import com.shortspark.emaliestates.navigation.Graph
 import com.shortspark.emaliestates.util.components.auth.EmailOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.LogoSection
 import com.shortspark.emaliestates.util.components.auth.OrDivider
@@ -57,31 +59,35 @@ data class SignInUiState(
     val passwordError: String? = null
 )
 
-private fun validateEmail(email: String): String? =
-    when {
+private fun validateEmail(email: String): String? {
+    val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
+    return when {
         email.isBlank() -> "Email is required"
-        !email.contains("@") -> "Enter a valid email"
+        !emailRegex.matches(email) -> "Enter a valid email address"
         else -> null
     }
-
-private fun validatePassword(password: String): String? =
-    when {
+}
+private fun validatePassword(password: String): String? {
+    val passwordRegex = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")
+    return when {
         password.isBlank() -> "Password is required"
-        password.length < 6 -> "Password must be at least 6 characters"
+        password.length < 8 -> "Password must be at least 8 characters long"
+        !passwordRegex.matches(password) -> "Password must contain an uppercase letter, a number, and a special character"
         else -> null
     }
+}
 
 @Composable
 fun SigninScreen(
     navController: NavController,
 ) {
     val authViewModel = koinViewModel<AuthViewModel>()
-    val loginState by authViewModel.loginState
+    val loginState by authViewModel.loginState.collectAsState()
 
     LaunchedEffect(loginState) {
         if (loginState is RequestState.Success) {
-            navController.navigate(BaseScreen.Home.route) {
-                popUpTo(AuthScreen.SignIn.route) { inclusive = true }
+            navController.navigate(Graph.BASE) {
+                popUpTo(Graph.AUTHENTICATION) { inclusive = true }
             }
         }
     }
@@ -206,7 +212,7 @@ fun SigninContent(
                 colors = ButtonColors(
                     containerColor = MaterialTheme.colorScheme.secondary,
                     contentColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = Color.Gray,
+                    disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                     disabledContentColor = Color.White
                 ),
                 text = "Sign In",

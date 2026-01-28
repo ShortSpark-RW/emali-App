@@ -1,6 +1,7 @@
 package com.shortspark.emaliestates.data.remote
 
 import com.shortspark.emaliestates.domain.auth.AuthResponse
+import com.shortspark.emaliestates.domain.auth.GoogleRequest
 import com.shortspark.emaliestates.domain.auth.LoginRequest
 import com.shortspark.emaliestates.util.helpers.AppConstants
 import io.ktor.client.HttpClient
@@ -30,6 +31,42 @@ class AuthApi(
                         password = password
                     )
                 )
+        }.body()
+    }
+
+//    suspend fun signup(
+//        username: String,
+//        email: String,
+//        password: String
+//    ): AuthResponse {
+//        return client.post("${AppConstants.ALL_PROPERTIES_ENDPOINT}/auth/signup") {
+//            contentType(ContentType.Application.Json)
+//            setBody(
+//                LoginRequest(
+//                    identifier = email,
+//                    password = password
+//                )
+//            )
+//        }
+//    }
+
+    suspend fun logout() {
+        return client.post("${AppConstants.ALL_PROPERTIES_ENDPOINT}/auth/logout") {
+            // Explicitly setting empty string to match -d ''
+            setBody("")
+        }.body()
+    }
+
+    suspend fun google(
+        access_token: String?
+    ): AuthResponse {
+        return client.post("${AppConstants.ALL_PROPERTIES_ENDPOINT}/auth/google") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                GoogleRequest(
+                    access_token = access_token
+                )
+            )
         }.body()
     }
 }

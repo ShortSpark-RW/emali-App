@@ -1,56 +1,54 @@
 package com.shortspark.emaliestates.data
 
 import com.russhwolf.settings.Settings
-import com.shortspark.emaliestates.data.local.LocalDatabase
 import com.shortspark.emaliestates.data.remote.PropertyApi
+import com.shortspark.emaliestates.data.repository.PropertyRepository
 import com.shortspark.emaliestates.domain.Property
 import com.shortspark.emaliestates.domain.RequestState
-import kotlin.time.Clock
+import kotlinx.datetime.Clock
+import  kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
-const val FRESH_DATA_KEY = "freshDataTimestamp"
+private const val FRESH_DATA_KEY = "freshDataTimestamp"
 
-class PropertySDK (
+@OptIn(ExperimentalTime::class) // FIX: Added OptIn annotation here
+class PropertySDK(
     private val api: PropertyApi,
-    private val database: LocalDatabase,
-    private val settings: Settings
+    private val repository: PropertyRepository,
+    private val settings: Settings,
+    private val clock: Clock
 ) {
 
-    @OptIn(ExperimentalTime::class)
     @Throws(Exception::class)
     suspend fun getAllProperties(): RequestState<List<Property>> {
         return try {
-            val cachedProperties = database.readAllProperties()
+            val cachedProperties = repository.getLocalProperties()
+
             if (cachedProperties.isEmpty()) {
-                settings.putLong(
-                    FRESH_DATA_KEY,
-                    Clock.System.now().toEpochMilliseconds()
-                )
-                val apiResponse = api.fetchAllProperties()
-                // Safely handle nullable data
-                apiResponse.data?.let { properties ->
-                    database.removeAllProperties()
-                    database.insertAllProperties(properties)
-                    RequestState.Success(properties)
-                } ?: RequestState.Error("Failed to fetch properties from the network.")
+                // Case 1: No Cache -> Fetch from Network
+                fetchAndSave()
             } else {
                 if (isDataStale()) {
-                    val apiResponse = api.fetchAllProperties()
-                    // Safely handle nullable data here as well
-                    apiResponse.data?.let { properties ->
-                        database.removeAllProperties()
-                        database.insertAllProperties(properties)
-                        RequestState.Success(properties)
-                    } ?: RequestState.Success(cachedProperties) // Fallback to stale cache if network fails
+                    // Case 2: Stale Cache -> Try Network, Fallback to Cache
+                    try {
+                        val apiResponse = api.fetchAllProperties()
+                        apiResponse.data?.let { properties ->
+                            saveToCache(properties)
+                            RequestState.Success(properties)
+                        } ?: RequestState.Success(cachedProperties) // Keep old data if server returns null
+                    } catch (e: Exception) {
+                        // Network error -> Return Stale Cache
+                        RequestState.Success(cachedProperties)
+                    }
                 } else {
+                    // Case 3: Fresh Cache -> Return Cache
                     RequestState.Success(cachedProperties)
                 }
             }
         } catch (e: Exception) {
-            // Check for cached data as a fallback on exception
-            val cachedProperties = database.readAllProperties()
+            // General Fallback
+            val cachedProperties = repository.getLocalProperties()
             if (cachedProperties.isNotEmpty()) {
                 RequestState.Success(cachedProperties)
             } else {
@@ -59,16 +57,34 @@ class PropertySDK (
         }
     }
 
+    private suspend fun fetchAndSave(): RequestState<List<Property>> {
+        val apiResponse = api.fetchAllProperties()
+        return apiResponse.data?.let { properties ->
+            saveToCache(properties)
+            RequestState.Success(properties)
+        } ?: RequestState.Error("Failed to fetch properties from the network.")
+    }
 
-    @OptIn(ExperimentalTime::class)
+    private fun saveToCache(properties: List<Property>) {
+        repository.saveProperties(properties)
+        settings.putLong(
+            FRESH_DATA_KEY,
+            clock.now().toEpochMilliseconds()
+        )
+    }
+
     private fun isDataStale(): Boolean {
         val savedTimestamp = Instant.fromEpochMilliseconds(
             settings.getLong(FRESH_DATA_KEY, 0L)
         )
-        val currentTimestamp = Clock.System.now()
-        val difference =
-            if (savedTimestamp > currentTimestamp) savedTimestamp - currentTimestamp
-            else currentTimestamp - savedTimestamp
+        val currentTimestamp = clock.now()
+
+        // Calculate difference safely
+        val difference = if (currentTimestamp > savedTimestamp) {
+            currentTimestamp - savedTimestamp
+        } else {
+            savedTimestamp - currentTimestamp
+        }
 
         return difference >= 24.hours
     }

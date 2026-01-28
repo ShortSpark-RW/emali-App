@@ -18,7 +18,7 @@ kotlin {
         // FIX: Configure JVM target here using compilations
         compilations.all {
             kotlinOptions {
-                jvmTarget = "11"
+                jvmTarget = JvmTarget.JVM_11.target
             }
         }
     }

@@ -1,7 +1,6 @@
 package com.shortspark.emaliestates.util.components.auth
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,79 +25,81 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
 import com.shortspark.emaliestates.auth.viewModel.FacebookAuthViewModel
-import com.shortspark.emaliestates.auth.viewModel.GoogleAuthViewModel
-import com.sunildhiman90.kmauth.google.KMAuthGoogle
+import com.shortspark.emaliestates.domain.RequestState
 import com.sunildhiman90.kmauth.supabase.KMAuthSupabase
 import emaliestates.composeapp.generated.resources.Res
 import emaliestates.composeapp.generated.resources.facebook
 import emaliestates.composeapp.generated.resources.google
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SocialAuthButtons(
     modifier: Modifier = Modifier,
 ) {
+    // Inject the unified AuthViewModel
+    val authViewModel = koinViewModel<AuthViewModel>()
+
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        GoogleSignInButton()
-//        FacebookSignInButton()
+        GoogleSignInButton(authViewModel)
+        // FacebookSignInButton()
     }
 }
 
 @Composable
 fun GoogleSignInButton(
+    authViewModel: AuthViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val state by authViewModel.loginState.collectAsState()
 
-    val googleAuthViewModel = remember {
-        GoogleAuthViewModel(
-            googleAuthManager = KMAuthGoogle.googleAuthManager
-        )
-    }
+    // Helper to determine if we are logged in
+    val isLoggedIn = state is RequestState.Success
 
-
-    val state by googleAuthViewModel.googleAuthUiState.collectAsState()
-
-    val onSignIn = {
-        googleAuthViewModel.signInWithGoogle()
-    }
-
-    val onSignOut = {
-        googleAuthViewModel.signOut()
-    }
-
-
-    if (state.user == null && state.errorMessage == null) {
-        OutlinedButton(
-            onClick = {
-                onSignIn()
-            },
-            modifier = modifier
-                .fillMaxWidth() // Adjust width as needed, 0.8f means 80% of parent width
-                .height(40.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = Color.Transparent,
-                contentColor = if (darkTheme) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimary, // Dark theme),
-                // borderColor = GoogleButtonColors.DefaultBorderColor // OutlinedButton implicitly uses contentColor for border if not set
-            ),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)), // Explicitly set border
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 2.dp)
+    OutlinedButton(
+        onClick = {
+            if (isLoggedIn) {
+                authViewModel.logout()
+            } else {
+                authViewModel.signInWithGoogle()
+            }
+        },
+        modifier = modifier
+            .fillMaxWidth()
+            .height(40.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 2.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
+            if (isLoggedIn) {
+                // Get user name safely
+                val user = (state as RequestState.Success).data
+                Text(
+                    text = "Sign out, ${user.username}", // Access the property from your User domain object
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
+            } else {
                 Icon(
-                    painter = painterResource(Res.drawable.google), // Replace with your Google icon resource
+                    painter = painterResource(Res.drawable.google),
                     contentDescription = "Google Icon",
                     modifier = Modifier.size(24.dp),
-                    tint = Color.Unspecified // Use the icon's original color
+                    tint = Color.Unspecified
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
@@ -108,29 +109,6 @@ fun GoogleSignInButton(
                     fontSize = 16.sp
                 )
             }
-        }
-    } else {
-        OutlinedButton(
-            onClick = {
-                onSignOut()
-            },
-            modifier = modifier
-                .fillMaxWidth() // Adjust width as needed, 0.8f means 80% of parent width
-                .height(40.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = Color.Transparent,
-                contentColor = if (darkTheme) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimary, // Dark theme
-            ),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 2.dp)
-        ) {
-            Text(
-                text = "Sign out, ${state.user}",
-                color = MaterialTheme.colorScheme.onPrimary,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp
-            )
         }
     }
 }
