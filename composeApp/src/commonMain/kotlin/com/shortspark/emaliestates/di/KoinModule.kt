@@ -1,7 +1,8 @@
 package com.shortspark.emaliestates.di
 
+import PropertyRepository
 import com.russhwolf.settings.Settings
-import com.shortspark.emaliestates.MainViewModel
+import com.shortspark.emaliestates.home.viewModel.MainViewModel
 import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
 import com.shortspark.emaliestates.data.AuthSDK
 import com.shortspark.emaliestates.data.PropertySDK
@@ -10,7 +11,7 @@ import com.shortspark.emaliestates.data.remote.AuthApi
 import com.shortspark.emaliestates.data.remote.HttpClientFactory
 import com.shortspark.emaliestates.data.remote.PropertyApi
 import com.shortspark.emaliestates.data.repository.AuthRepository
-import com.shortspark.emaliestates.data.repository.PropertyRepository
+import com.shortspark.emaliestates.property.viewModel.PropertyDetailViewModel
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -68,6 +69,13 @@ val sharedModule = module {
         AuthViewModel(
             sdk = get(),
             googleAuthManager = get(),
+        )
+    }
+
+    viewModel { (propertyId: String) ->
+        PropertyDetailViewModel(
+            propertyId = propertyId,
+            propertySDK = get()
         )
     }
 

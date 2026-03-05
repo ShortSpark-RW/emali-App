@@ -1,22 +1,30 @@
-package com.shortspark.emaliestates.data.repository
-
 import com.shortspark.emaliestates.data.local.LocalDatabase
 import com.shortspark.emaliestates.domain.Property
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 
 class PropertyRepository(
     private val database: LocalDatabase
 ) {
-    fun getLocalProperties(): List<Property> {
-        return database.readAllProperties()
-    }
+    suspend fun getLocalProperties(): List<Property> =
+        withContext(Dispatchers.IO) {
+            database.readAllProperties()
+        }
 
-    fun saveProperties(properties: List<Property>) {
-        // Ideally run in a transaction if your DB wrapper supports it
-        database.removeAllProperties()
-        database.insertAllProperties(properties)
-    }
+    suspend fun saveProperties(properties: List<Property>) =
+        withContext(Dispatchers.IO) {
+            database.removeAllProperties()
+            database.insertAllProperties(properties)
+        }
 
-    fun clearProperties() {
-        database.removeAllProperties()
-    }
+    suspend fun getPropertyById(id: String): Property? =
+        withContext(Dispatchers.IO) {
+            database.readPropertyById(id)
+        }
+
+    suspend fun clearProperties() =
+        withContext(Dispatchers.IO) {
+            database.removeAllProperties()
+        }
 }

@@ -67,6 +67,54 @@ class LocalDatabase(
     }
 
     @OptIn(ExperimentalTime::class)
+    fun readPropertyById(id: String): Property? {
+        return query.getPropertyById(id)
+            .executeAsOneOrNull()
+            .let { dbProperty ->
+                dbProperty?.let {
+                    Property(
+                        id = dbProperty.id,
+                        title = dbProperty.title,
+                        description = dbProperty.description,
+                        type = dbProperty.type,
+                        saleType = dbProperty.saleType,
+                        price = dbProperty.price.toFloat(),
+                        locationId = dbProperty.locationId,
+                        isActive = dbProperty.isActive == 1L,
+                        isFurnished = dbProperty.isFurnished == 1L,
+                        furnishingType = dbProperty.furnishingType,
+                        bedrooms = dbProperty.bedrooms.toInt(),
+                        bathrooms = dbProperty.bathrooms.toInt(),
+                        area = dbProperty.area.toFloat(),
+                        featuredImg = dbProperty.featuredImg,
+                        additionalImgs = dbProperty.additionalImgs?.let { Json.decodeFromString<List<String>>(it) } ?: emptyList(),
+                        videoUrl = dbProperty.videoUrl,
+                        floorPlanUrl = dbProperty.floorPlanUrl,
+                        amenities = dbProperty.amenities?.let { Json.decodeFromString<List<String>>(it) } ?: emptyList(),
+                        utilities = dbProperty.utilities?.let { Json.decodeFromString<List<String>>(it) } ?: emptyList(),
+                        isVerified = dbProperty.isVerified == 1L,
+                        isFeatured = dbProperty.isFeatured == 1L,
+                        isSold = dbProperty.isSold == 1L,
+                        isRented = dbProperty.isRented == 1L,
+                        isShared = dbProperty.isShared == 1L,
+                        isReserved = dbProperty.isReserved == 1L,
+                        isArchived = dbProperty.isArchived == 1L,
+                        archivedAt = dbProperty.archivedAt?.toInstantSafe(),
+                        archivedReason = dbProperty.archivedReason,
+                        archivedBy = dbProperty.archivedBy,
+                        upi = dbProperty.upi,
+                        ownerId = dbProperty.ownerId,
+                        categoryId = dbProperty.categoryId,
+                        placeId = dbProperty.placeId,
+                        createdAt = dbProperty.createdAt.toInstantSafe(),
+                        updatedAt = dbProperty.updatedAt.toInstantSafe()
+
+                    )
+                }
+            }
+    }
+
+    @OptIn(ExperimentalTime::class)
     fun insertAllProperties(properties: List<Property>) {
         println("INFO: Inserting properties")
         query.transaction {

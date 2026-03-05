@@ -1,13 +1,22 @@
 package com.shortspark.emaliestates.data
 
+import PropertyRepository
 import com.russhwolf.settings.Settings
 import com.shortspark.emaliestates.data.remote.PropertyApi
-import com.shortspark.emaliestates.data.repository.PropertyRepository
+import com.shortspark.emaliestates.domain.ApiErrorResponse
 import com.shortspark.emaliestates.domain.Property
 import com.shortspark.emaliestates.domain.RequestState
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.RedirectResponseException
+import io.ktor.client.plugins.ServerResponseException
 import kotlinx.datetime.Clock
 import  kotlinx.datetime.Instant
+import kotlinx.io.IOException
+import kotlinx.serialization.SerializationException
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 private const val FRESH_DATA_KEY = "freshDataTimestamp"
@@ -57,15 +66,81 @@ class PropertySDK(
         }
     }
 
-    private suspend fun fetchAndSave(): RequestState<List<Property>> {
-        val apiResponse = api.fetchAllProperties()
-        return apiResponse.data?.let { properties ->
-            saveToCache(properties)
-            RequestState.Success(properties)
-        } ?: RequestState.Error("Failed to fetch properties from the network.")
+    suspend fun fetchPropertyById(id: String): RequestState<Property?> {
+        return try {
+            val cachedProperty = repository.getPropertyById(id)
+
+            if (cachedProperty == null) {
+                // Case 1: No Cache -> Fetch from Network
+                val apiResponse = api.fetchPropertyById(id)
+                RequestState.Success(apiResponse.data)
+            } else {
+                // Case 2: Cache Hit -> Return Cache
+                RequestState.Success(cachedProperty)
+            }
+        } catch (e: ClientRequestException) {
+            // 4xx errors
+            val errorBody = e.response.body<ApiErrorResponse>()
+            RequestState.Error(errorBody.error ?: errorBody.message)
+        } catch (e: ServerResponseException) {
+            // 5xx errors
+            val errorBody = e.response.body<ApiErrorResponse>()
+            RequestState.Error(errorBody.error ?: errorBody.message)
+        } catch (e: RedirectResponseException) {
+            // 3xx errors
+            RequestState.Error("Unexpected redirect: ${e.response.status.description}")
+        } catch (e: SerializationException) {
+            // Response body couldn't be parsed
+            RequestState.Error("Failed to parse server response.")
+        } catch (e: IOException) {
+            // No internet / connection dropped
+            RequestState.Error("No internet connection. Please check your network.")
+        } catch (e: Exception) {
+            // Catch-all fallback
+            RequestState.Error(e.message ?: "An unknown error occurred.")
+        }
     }
 
-    private fun saveToCache(properties: List<Property>) {
+    private suspend fun fetchAndSave(): RequestState<List<Property>> {
+        return try {
+            val apiResponse = api.fetchAllProperties()
+
+            when {
+                apiResponse.data != null -> {
+                    saveToCache(apiResponse.data)
+                    RequestState.Success(apiResponse.data)
+                }
+                apiResponse.message != null -> {
+                    RequestState.Error(apiResponse.message.joinToString(", "))
+                }
+                else -> {
+                    RequestState.Error(apiResponse.message)
+                }
+            }
+        } catch (e: ClientRequestException) {
+            // 4xx errors
+            val errorBody = e.response.body<ApiErrorResponse>()
+            RequestState.Error(errorBody.error ?: errorBody.message)
+        } catch (e: ServerResponseException) {
+            // 5xx errors
+            val errorBody = e.response.body<ApiErrorResponse>()
+            RequestState.Error(errorBody.error ?: errorBody.message)
+        } catch (e: RedirectResponseException) {
+            // 3xx errors
+            RequestState.Error("Unexpected redirect: ${e.response.status.description}")
+        } catch (e: SerializationException) {
+            // Response body couldn't be parsed
+            RequestState.Error("Failed to parse server response.")
+        } catch (e: IOException) {
+            // No internet / connection dropped
+            RequestState.Error("No internet connection. Please check your network.")
+        } catch (e: Exception) {
+            // Catch-all fallback
+            RequestState.Error(e.message ?: "An unknown error occurred.")
+        }
+    }
+
+    private suspend fun saveToCache(properties: List<Property>) {
         repository.saveProperties(properties)
         settings.putLong(
             FRESH_DATA_KEY,
@@ -86,6 +161,6 @@ class PropertySDK(
             savedTimestamp - currentTimestamp
         }
 
-        return difference >= 24.hours
+        return difference >= 5.minutes
     }
 }

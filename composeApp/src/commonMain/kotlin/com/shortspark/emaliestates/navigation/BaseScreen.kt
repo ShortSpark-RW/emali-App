@@ -7,4 +7,7 @@ sealed class BaseScreen(val route: String) {
     object Profile : BaseScreen(route = "profile_screen")
     object Search : BaseScreen(route = "search_screen")
 
+    object PropertyDetail : BaseScreen("properties/{propertyId}") {
+        fun createRoute(propertyId: String) = "properties/$propertyId"
+    }
 }

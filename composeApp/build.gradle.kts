@@ -17,8 +17,13 @@ kotlin {
     androidTarget {
         // FIX: Configure JVM target here using compilations
         compilations.all {
-            kotlinOptions {
-                jvmTarget = JvmTarget.JVM_11.target
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_11)
+                    // Explicitly set API version to match Kotlin 2.2
+                    apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+                    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+                }
             }
         }
     }
@@ -69,6 +74,7 @@ kotlin {
             api(compose.animation)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.material.icons.extended)
+            implementation(libs.coil.network.ktor)
 
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.no.arg)

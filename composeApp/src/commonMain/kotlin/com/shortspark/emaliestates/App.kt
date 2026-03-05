@@ -2,6 +2,10 @@ package com.shortspark.emaliestates
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.rememberNavController
+import coil3.ImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.network.ktor3.KtorNetworkFetcherFactory
+import coil3.request.crossfade
 import com.shortspark.emaliestates.navigation.AppNavGraph
 import com.shortspark.emaliestates.navigation.Graph
 import com.shortspark.emaliestates.theme.EmaliEstatesTheme
@@ -23,6 +27,15 @@ fun App() {
 //            supabaseKey = AppConstants.SUPABASE_KEY
 //        )
 //    )
+    // ── Coil: register Ktor-based network fetcher (works on Android + iOS) ────
+    setSingletonImageLoaderFactory { context ->
+        ImageLoader.Builder(context)
+            .components {
+                add(KtorNetworkFetcherFactory())
+            }
+            .crossfade(true)
+            .build()
+    }
 
     EmaliEstatesTheme {
         val navController = rememberNavController()

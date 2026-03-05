@@ -4,7 +4,7 @@ sealed class RequestState<out T> {
     data object Idle : RequestState<Nothing>()
     data object Loading : RequestState<Nothing>()
     data class Success<out T>(val data: T) : RequestState<T>()
-    data class Error(val message: String, val code: Int? = null) : RequestState<Nothing>()
+    data class Error(val message: String? = null) : RequestState<Nothing>()
 
     fun isIdle(): Boolean = this is Idle
     fun isLoading(): Boolean = this is Loading

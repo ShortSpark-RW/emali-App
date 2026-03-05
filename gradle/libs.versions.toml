@@ -33,7 +33,7 @@ buildkonfig = "0.15.1"
 [libraries]
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilCompose" }
-coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor", version.ref = "coilCompose" }
+coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilCompose" }
 kmauth-google = { module = "io.github.sunildhiman90:kmauth-google", version.ref = "kmauthGoogleCompose" }
 kmauth-google-compose = { module = "io.github.sunildhiman90:kmauth-google-compose", version.ref = "kmauthGoogleCompose" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

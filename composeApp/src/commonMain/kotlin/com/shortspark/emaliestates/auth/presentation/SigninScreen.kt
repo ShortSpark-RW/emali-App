@@ -195,7 +195,10 @@ fun SigninContent(
                             state = state.copy(rememberMe = it)
                         }
                     )
-                    Text("Remember me")
+                    Text(
+                        text = "Remember me",
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
 
                 Text(
@@ -232,7 +235,7 @@ fun SigninContent(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                buildAnnotatedString {
+                text = buildAnnotatedString {
                     append("Don't have an account?")
                     withStyle(
                         SpanStyle(
@@ -243,6 +246,7 @@ fun SigninContent(
                         append(" Sign up")
                     }
                 },
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.clickable { onSignup() }
             )
         }

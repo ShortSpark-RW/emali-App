@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ApiErrorResponse(
-    val status: String,
+    val status: String? = null,
     val error: String? = null,
     val message: String,
     val statusCode: Int? = null
