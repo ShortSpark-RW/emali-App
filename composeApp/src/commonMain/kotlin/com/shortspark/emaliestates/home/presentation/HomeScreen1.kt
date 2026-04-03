@@ -66,7 +66,12 @@ fun HomeScreen1(navController: NavController) {
         ) {
             when (val state = propertiesState) {
                 is RequestState.Idle -> {
-                    LoadingState()
+                    // Show skeleton loading for initial state
+                    PropertiesList(
+                        properties = emptyList(),
+                        navController = navController,
+                        showSkeletons = true
+                    )
                 }
                 is RequestState.Loading -> {
                     // When switching categories, keep showing old data if available
@@ -81,7 +86,12 @@ fun HomeScreen1(navController: NavController) {
                             isLoadingMore = true
                         )
                     } else {
-                        LoadingState()
+                        // Show skeleton loading for initial load
+                        PropertiesList(
+                            properties = emptyList(),
+                            navController = navController,
+                            showSkeletons = true
+                        )
                     }
                 }
                 is RequestState.Success<*> -> {
@@ -194,7 +204,8 @@ private fun PropertiesList(
     properties: List<Property>,
     navController: NavController,
     listState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
-    isLoadingMore: Boolean = false
+    isLoadingMore: Boolean = false,
+    showSkeletons: Boolean = false
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -202,16 +213,23 @@ private fun PropertiesList(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         state = listState
     ) {
+        val itemCount = if (showSkeletons) 10 else properties.size
+
         items(
-            items = properties,
-            key = { it.id } // Stable key for better performance
-        ) { property ->
-            PropertyCard(
-                property = property,
-                onClick = {
-                    navController.navigate("property/${property.id}")
-                }
-            )
+            count = itemCount,
+            key = { if (showSkeletons) it else properties[it].id }
+        ) { index ->
+            if (showSkeletons) {
+                SkeletonPropertyCard()
+            } else {
+                val property = properties[index]
+                PropertyCard(
+                    property = property,
+                    onClick = {
+                        navController.navigate("property/${property.id}")
+                    }
+                )
+            }
         }
 
         // Show loading indicator at bottom if loading more
@@ -227,6 +245,80 @@ private fun PropertiesList(
                         modifier = Modifier.size(32.dp),
                         strokeWidth = 2.dp
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SkeletonPropertyCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(0.dp)
+        ) {
+            // Skeleton image placeholder
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+            )
+
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                // Title skeleton
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(24.dp)
+                        .background(
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                            MaterialTheme.shapes.small
+                        )
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Description skeleton
+                repeat(2) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .height(16.dp)
+                            .background(
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                MaterialTheme.shapes.small
+                            )
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Specs row skeleton
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    repeat(3) {
+                        Box(
+                            modifier = Modifier
+                                .size(width = 40.dp, height = 20.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                    MaterialTheme.shapes.small
+                                )
+                        )
+                    }
                 }
             }
         }
