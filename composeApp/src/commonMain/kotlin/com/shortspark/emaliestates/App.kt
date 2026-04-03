@@ -39,6 +39,6 @@ fun App() {
 
     EmaliEstatesTheme {
         val navController = rememberNavController()
-        AppNavGraph(navController = navController, startDestination = Graph.BASE)
+        AppNavGraph(navController = navController) // startDestination defaults to SPLASH
     }
 }

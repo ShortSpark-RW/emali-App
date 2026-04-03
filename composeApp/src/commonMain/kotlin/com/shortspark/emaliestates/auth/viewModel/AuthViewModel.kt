@@ -7,9 +7,13 @@ import com.shortspark.emaliestates.domain.RequestState
 import com.shortspark.emaliestates.domain.auth.User
 import com.sunildhiman90.kmauth.google.GoogleAuthManager
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.SharingStarted
 
 class AuthViewModel(
     private val sdk: AuthSDK,
@@ -19,6 +23,15 @@ class AuthViewModel(
     // Unified State: Tracks loading, success (with User), or error for ANY login method
     private val _loginState = MutableStateFlow<RequestState<User>>(RequestState.Idle)
     val loginState = _loginState.asStateFlow()
+
+    // Derived state: Current user if logged in, null otherwise
+    val currentUser: StateFlow<User?> = _loginState.map { state ->
+        if (state is RequestState.Success) state.data else null
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 
     // --- Standard Email/Password Login ---
     fun login(email: String, password: String) {
