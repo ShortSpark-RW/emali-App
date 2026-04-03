@@ -8,9 +8,11 @@ import com.shortspark.emaliestates.data.AuthSDK
 import com.shortspark.emaliestates.data.PropertySDK
 import com.shortspark.emaliestates.data.local.LocalDatabase
 import com.shortspark.emaliestates.data.remote.AuthApi
+import com.shortspark.emaliestates.data.remote.CategoryApi
 import com.shortspark.emaliestates.data.remote.HttpClientFactory
 import com.shortspark.emaliestates.data.remote.PropertyApi
 import com.shortspark.emaliestates.data.repository.AuthRepository
+import com.shortspark.emaliestates.data.repository.CategoryRepository
 import com.shortspark.emaliestates.property.viewModel.PropertyDetailViewModel
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
@@ -97,9 +99,22 @@ val sharedModule = module {
         )
     }
 
-    // Main ViewModel - depends on PropertySDK
+    // Category API - depends on HttpClient
+    single<CategoryApi> { CategoryApi(get()) }
+
+    // Category Repository - depends on CategoryApi
+    single<CategoryRepository> {
+        CategoryRepository(
+            categoryApi = get()
+        )
+    }
+
+    // Main ViewModel - depends on PropertySDK and CategoryRepository
     viewModel {
-        MainViewModel(sdk = get())
+        MainViewModel(
+            sdk = get(),
+            categoryRepository = get()
+        )
     }
 }
 
