@@ -1,3 +1,5 @@
+@file:Suppress("UnresolvedReference", "UnresolvedClassName")
+
 package com.shortspark.emaliestates.navigation
 
 import androidx.compose.animation.core.tween
@@ -87,6 +89,7 @@ fun AppNavGraph(
                  route = BaseScreen.PropertyDetail.route,
                  arguments = listOf(navArgument("propertyId") { type = NavType.StringType })
              ) { backStackEntry ->
+                 // noinspection KotlinUnresolvedReference
                  val propertyId = backStackEntry.arguments?.getString("propertyId") ?: return@composable
                  PropertyDetailScreen(
                      propertyId = propertyId,
