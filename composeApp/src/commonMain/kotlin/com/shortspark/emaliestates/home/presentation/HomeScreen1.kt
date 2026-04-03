@@ -122,16 +122,6 @@ fun HomeScreen1(navController: NavController) {
 }
 
 @Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
-    }
-}
-
-@Composable
 private fun EmptyState(onRetry: () -> Unit, hasCategories: Boolean = false) {
     Column(
         modifier = Modifier.fillMaxSize(),
