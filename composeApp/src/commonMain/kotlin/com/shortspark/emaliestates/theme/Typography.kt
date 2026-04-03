@@ -42,15 +42,15 @@ val typography @Composable get() = Typography(
         fontFamily = poppinsFontFamily(),
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
-        lineHeight = 24.sp,
+        lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     ),
     displayLarge = TextStyle(
         fontFamily = robotoFontFamily(),
         fontWeight = FontWeight.W900,
-        fontSize = 57.sp,
-        lineHeight = 64.sp,
-        letterSpacing = (-0.25).sp
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = (-0.5).sp
     ),
     displayMedium = TextStyle(
         fontFamily = poppinsFontFamily(),

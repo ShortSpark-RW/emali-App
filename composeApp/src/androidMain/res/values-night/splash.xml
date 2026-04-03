@@ -3,6 +3,6 @@
     <style name="Theme.eMaliEstates.MySplash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#121714</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>
-        <item name="postSplashScreenTheme">@android:style/Theme.Material.Light.NoActionBar</item>
+        <item name="postSplashScreenTheme">@style/Theme.eMaliEstates</item>
     </style>
 </resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+    <string name="app_name">eMali Estates</string>
+    <string name="welcome_message">Murakaza neza kuri porogaramu yacu!</string>
+    <string name="error_message">Habaye ikibazo. Nyamuneka gerageza Funga.</string>
+
+    <!-- Urugero rwo gusimbuka apostrophe -->
+    <string name="example_apostrophe">Ni umunsi mwiza.</string>
+</resources>

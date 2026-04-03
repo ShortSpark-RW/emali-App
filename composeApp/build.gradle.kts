@@ -1,5 +1,6 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import com.codingfeline.buildkonfig.compiler.FieldSpec
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -8,15 +9,25 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.skie)
+    alias(libs.plugins.sqldelight)
+    alias(libs.plugins.buildKonfig)
 }
 
 kotlin {
     androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+        // FIX: Configure JVM target here using compilations
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_11)
+                    // Explicitly set API version to match Kotlin 2.2
+                    apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+                    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+                }
+            }
         }
     }
-    
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -25,9 +36,10 @@ kotlin {
             export(libs.androidx.lifecycle.viewmodel)
             baseName = "ComposeApp"
             isStatic = true
+            export("io.github.sunildhiman90:kmauth-supabase:0.3.1")
         }
     }
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(compose.preview)
@@ -37,6 +49,7 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.coil.network.okhttp)
             implementation(libs.androidx.core.splashscreen)
+            implementation(libs.android.material)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -54,17 +67,34 @@ kotlin {
             implementation(libs.runtime)
             implementation(libs.kotlinx.datetime)
             implementation(libs.koin.core)
+            implementation(libs.koin.androidx.compose)
             implementation(libs.coil.compose)
             api(libs.androidx.lifecycle.viewmodel)
+            api(compose.foundation)
+            api(compose.animation)
+            implementation(libs.androidx.navigation.compose)
+            implementation(libs.material.icons.extended)
+            implementation(libs.coil.network.ktor)
+
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.no.arg)
+            implementation(libs.kmauth.google.compose)
+            implementation(libs.kmauth.google)
+            implementation(libs.ktor.client.auth)
+            implementation(libs.ktor.client.logging)
+            api("io.github.sunildhiman90:kmauth-supabase:0.3.1")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
-            implementation(libs.native.driver)
-//            implementation(libs.coil.network.ktor)
+            implementation(libs.sqldelight.ios)
         }
+    }
+
+    sourceSets.all {
+        languageSettings.optIn("kotlin.experimental.ExperimentalObjCName")
     }
 }
 
@@ -93,8 +123,37 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    // REMOVED: kotlinOptions { ... } block from here.
+    // It is now handled in the kotlin { androidTarget { ... } } block above.
+
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
-dependencies {
-    debugImplementation(compose.uiTooling)
+buildkonfig {
+    packageName = "com.shortspark.emaliestates"
+
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { localProperties.load(it) }
+    }
+
+    defaultConfigs {
+        buildConfigField(FieldSpec.Type.STRING, "WEB_CLIENT_ID", localProperties.getProperty("webClientId") ?: "")
+        buildConfigField(FieldSpec.Type.STRING, "WEB_CLIENT_SECRET", localProperties.getProperty("webClientSecret") ?: "")
+        buildConfigField(FieldSpec.Type.STRING, "SUPABASE_URL", localProperties.getProperty("supabaseUrl") ?: "")
+        buildConfigField(FieldSpec.Type.STRING, "SUPABASE_KEY", localProperties.getProperty("supabaseKey") ?: "")
+        buildConfigField(FieldSpec.Type.STRING, "ALL_PROPERTIES_ENDPOINT", localProperties.getProperty("apiEndpoint") ?: "")
+    }
+}
+
+sqldelight {
+    databases {
+        create("PropertyDatabase") {
+            packageName.set("com.shortspark.emaliestates.database")
+        }
+    }
 }

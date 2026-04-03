@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+    <string name="app_name">eMali Estates</string>
+    <string name="welcome_message">Karibu kwenye programu yetu!</string>
+    <string name="error_message">Hitilafu imetokea. Tafadhali jaribu tena.</string>
+
+    <!-- Mfano wa kuepuka alama ya ' -->
+    <string name="example_apostrophe">Ni siku nzuri.</string>
+</resources>

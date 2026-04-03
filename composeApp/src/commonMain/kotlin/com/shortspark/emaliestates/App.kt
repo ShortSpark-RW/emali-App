@@ -1,52 +1,44 @@
 package com.shortspark.emaliestates
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import emaliestates.composeapp.generated.resources.Res
-import emaliestates.composeapp.generated.resources.logo_emali
-import org.jetbrains.compose.resources.painterResource
+import androidx.navigation.compose.rememberNavController
+import coil3.ImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.network.ktor3.KtorNetworkFetcherFactory
+import coil3.request.crossfade
+import com.shortspark.emaliestates.navigation.AppNavGraph
+import com.shortspark.emaliestates.navigation.Graph
+import com.shortspark.emaliestates.theme.EmaliEstatesTheme
+import com.shortspark.emaliestates.util.helpers.AppConstants
+import com.sunildhiman90.kmauth.core.KMAuthConfig
+import com.sunildhiman90.kmauth.core.KMAuthInitializer
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
+    KMAuthInitializer.initialize(
+        KMAuthConfig.forGoogle(webClientId = AppConstants.WEB_CLIENT_ID)
+    )
+
+//    KMAuthInitializer.initialize(
+//        KMAuthConfig.forSupabase(
+//            supabaseUrl = AppConstants.SUPABASE_URL,
+//            supabaseKey = AppConstants.SUPABASE_KEY
+//        )
+//    )
+    // ── Coil: register Ktor-based network fetcher (works on Android + iOS) ────
+    setSingletonImageLoaderFactory { context ->
+        ImageLoader.Builder(context)
+            .components {
+                add(KtorNetworkFetcherFactory())
             }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.logo_emali), null)
-                    Text("Compose: $greeting")
-                }
-            }
-        }
+            .crossfade(true)
+            .build()
+    }
+
+    EmaliEstatesTheme {
+        val navController = rememberNavController()
+        AppNavGraph(navController = navController, startDestination = Graph.BASE)
     }
 }
