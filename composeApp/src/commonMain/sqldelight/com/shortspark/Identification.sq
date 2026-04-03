@@ -1,0 +1,65 @@
+CREATE TABLE Identification (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    type TEXT NOT NULL, -- NATIONAL_ID, PASSPORT, DRIVING_LICENSE
+    countryOfIssue TEXT,
+    documentUrl TEXT,
+    extractedText TEXT,
+    verificationStatus TEXT NOT NULL DEFAULT 'PENDING', -- PENDING, APPROVED, REJECTED
+    nationalId TEXT,
+    passport TEXT,
+    drivingLicense TEXT,
+    verified INTEGER NOT NULL DEFAULT 0,
+    verificationDate TEXT,
+    faceVerified INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT,
+    updatedAt TEXT,
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+    UNIQUE (userId)
+);
+
+-- Indexes
+CREATE INDEX idx_identification_userId ON Identification(userId);
+CREATE INDEX idx_identification_verificationStatus ON Identification(verificationStatus);
+CREATE INDEX idx_identification_verified ON Identification(verified);
+CREATE INDEX idx_identification_type ON Identification(type);
+
+-- Queries
+insertIdentification:
+INSERT INTO Identification (id, userId, type, countryOfIssue, documentUrl, extractedText, verificationStatus, nationalId, passport, drivingLicense, verified, verificationDate, faceVerified, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getIdentificationById:
+SELECT * FROM Identification WHERE id = ?;
+
+getIdentificationByUserId:
+SELECT * FROM Identification WHERE userId = ?;
+
+getAllIdentifications:
+SELECT * FROM Identification ORDER BY createdAt DESC;
+
+getPendingVerifications:
+SELECT * FROM Identification WHERE verificationStatus = 'PENDING' ORDER BY createdAt ASC;
+
+updateIdentification:
+UPDATE Identification SET
+    type = ?,
+    countryOfIssue = ?,
+    documentUrl = ?,
+    extractedText = ?,
+    verificationStatus = ?,
+    nationalId = ?,
+    passport = ?,
+    drivingLicense = ?,
+    verified = ?,
+    verificationDate = ?,
+    faceVerified = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteIdentification:
+DELETE FROM Identification WHERE id = ?;
+
+clearAllIdentifications:
+DELETE FROM Identification;
+

@@ -1,0 +1,42 @@
+CREATE TABLE District (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    provinceId TEXT NOT NULL,
+    code TEXT,
+    createdAt TEXT,
+    updatedAt TEXT,
+    FOREIGN KEY (provinceId) REFERENCES Province(id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_district_name ON District(name);
+CREATE INDEX idx_district_provinceId ON District(provinceId);
+
+-- Queries
+insertDistrict:
+INSERT INTO District (id, name, provinceId, code, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+getDistrictById:
+SELECT * FROM District WHERE id = ?;
+
+getDistrictsByProvinceId:
+SELECT * FROM District WHERE provinceId = ? ORDER BY name ASC;
+
+getAllDistricts:
+SELECT * FROM District ORDER BY name ASC;
+
+updateDistrict:
+UPDATE District SET
+    name = ?,
+    provinceId = ?,
+    code = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteDistrict:
+DELETE FROM District WHERE id = ?;
+
+clearAllDistricts:
+DELETE FROM District;
+

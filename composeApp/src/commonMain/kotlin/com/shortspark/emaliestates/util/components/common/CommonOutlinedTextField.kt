@@ -1,7 +1,9 @@
 package com.shortspark.emaliestates.util.components.common
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -45,13 +47,15 @@ fun CommonOutlinedTextField(
     // State
     enabled: Boolean = true,
     isError: Boolean = false,
+    errorMessage: String = "",
 
     // Actions
     keyboardActions: KeyboardActions = KeyboardActions.Default,
 
     modifier: Modifier = Modifier
 ) {
-    OutlinedTextField(
+    Column {
+        OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier
@@ -101,4 +105,13 @@ fun CommonOutlinedTextField(
 
         keyboardActions = keyboardActions
     )
+    }
+    if (isError && errorMessage.isNotEmpty()) {
+        Text(
+            text = errorMessage,
+            color = MaterialTheme.colorScheme.error,
+            style = TextStyle(fontSize = 12.sp),
+            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+        )
+    }
 }

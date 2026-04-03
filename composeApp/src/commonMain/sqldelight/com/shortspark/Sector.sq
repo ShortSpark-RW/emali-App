@@ -1,0 +1,42 @@
+CREATE TABLE Sector (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    districtId TEXT NOT NULL,
+    code TEXT,
+    createdAt TEXT,
+    updatedAt TEXT,
+    FOREIGN KEY (districtId) REFERENCES District(id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_sector_name ON Sector(name);
+CREATE INDEX idx_sector_districtId ON Sector(districtId);
+
+-- Queries
+insertSector:
+INSERT INTO Sector (id, name, districtId, code, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+getSectorById:
+SELECT * FROM Sector WHERE id = ?;
+
+getSectorsByDistrictId:
+SELECT * FROM Sector WHERE districtId = ? ORDER BY name ASC;
+
+getAllSectors:
+SELECT * FROM Sector ORDER BY name ASC;
+
+updateSector:
+UPDATE Sector SET
+    name = ?,
+    districtId = ?,
+    code = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteSector:
+DELETE FROM Sector WHERE id = ?;
+
+clearAllSectors:
+DELETE FROM Sector;
+

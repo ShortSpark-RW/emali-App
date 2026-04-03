@@ -1,7 +1,7 @@
-import kotlin.time.Instant
-import kotlin.time.ExperimentalTime
+package com.shortspark.emaliestates.util.helpers
 
-@OptIn(ExperimentalTime::class)
+import kotlinx.datetime.Instant
+
 fun String.toInstantSafe(): Instant {
     var value = this.trim()
 

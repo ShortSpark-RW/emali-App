@@ -1,0 +1,56 @@
+CREATE TABLE Location (
+    id TEXT NOT NULL PRIMARY KEY,
+    provinceId TEXT,
+    districtId TEXT,
+    sectorId TEXT,
+    cellId TEXT,
+    villageId TEXT,
+    latitude REAL,
+    longitude REAL,
+    address TEXT,
+    createdAt TEXT,
+    updatedAt TEXT,
+    FOREIGN KEY (provinceId) REFERENCES Province(id) ON DELETE SET NULL,
+    FOREIGN KEY (districtId) REFERENCES District(id) ON DELETE SET NULL,
+    FOREIGN KEY (sectorId) REFERENCES Sector(id) ON DELETE SET NULL,
+    FOREIGN KEY (cellId) REFERENCES Cell(id) ON DELETE SET NULL,
+    FOREIGN KEY (villageId) REFERENCES Village(id) ON DELETE SET NULL
+);
+
+-- Indexes for foreign keys
+CREATE INDEX idx_location_provinceId ON Location(provinceId);
+CREATE INDEX idx_location_districtId ON Location(districtId);
+CREATE INDEX idx_location_sectorId ON Location(sectorId);
+CREATE INDEX idx_location_cellId ON Location(cellId);
+CREATE INDEX idx_location_villageId ON Location(villageId);
+
+-- Queries
+insertLocation:
+INSERT INTO Location (id, provinceId, districtId, sectorId, cellId, villageId, latitude, longitude, address, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getLocationById:
+SELECT * FROM Location WHERE id = ?;
+
+getAllLocations:
+SELECT * FROM Location ORDER BY createdAt DESC;
+
+updateLocation:
+UPDATE Location SET
+    provinceId = ?,
+    districtId = ?,
+    sectorId = ?,
+    cellId = ?,
+    villageId = ?,
+    latitude = ?,
+    longitude = ?,
+    address = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteLocation:
+DELETE FROM Location WHERE id = ?;
+
+clearAllLocations:
+DELETE FROM Location;
+

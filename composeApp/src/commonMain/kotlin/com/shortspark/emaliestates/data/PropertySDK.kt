@@ -1,6 +1,6 @@
 package com.shortspark.emaliestates.data
 
-import PropertyRepository
+import com.shortspark.emaliestates.data.repository.PropertyRepository
 import com.russhwolf.settings.Settings
 import com.shortspark.emaliestates.data.remote.PropertyApi
 import com.shortspark.emaliestates.domain.ApiErrorResponse
@@ -11,13 +11,12 @@ import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.RedirectResponseException
 import io.ktor.client.plugins.ServerResponseException
 import kotlinx.datetime.Clock
-import  kotlinx.datetime.Instant
-import kotlinx.io.IOException
+import kotlinx.datetime.Instant
 import kotlinx.serialization.SerializationException
-import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
+import com.shortspark.emaliestates.util.helpers.loggerFor
 import kotlin.time.ExperimentalTime
+import java.io.IOException
 
 private const val FRESH_DATA_KEY = "freshDataTimestamp"
 
@@ -29,8 +28,30 @@ class PropertySDK(
     private val clock: Clock
 ) {
 
+    /**
+     * Fetches properties with optional pagination and category filter.
+     *
+     * @param page Page number (1-indexed)
+     * @param limit Number of items per page
+     * @param categoryId Optional category ID to filter properties
+     *
+     * Caching behavior:
+     * - If categoryId is null: uses existing 5-minute cache (all properties)
+     * - If categoryId is provided: bypasses cache, always fetches from network
+     *   (server-side filtering ensures accurate results)
+     */
     @Throws(Exception::class)
-    suspend fun getAllProperties(): RequestState<List<Property>> {
+    suspend fun getAllProperties(
+        page: Int = 1,
+        limit: Int = 10,
+        categoryId: String? = null
+    ): RequestState<List<Property>> {
+        // If category filter is applied, fetch directly from network (no cache)
+        if (categoryId != null) {
+            return fetchFromNetwork(page, limit, categoryId)
+        }
+
+        // No filter: use cached approach
         return try {
             val cachedProperties = repository.getLocalProperties()
 
@@ -41,11 +62,11 @@ class PropertySDK(
                 if (isDataStale()) {
                     // Case 2: Stale Cache -> Try Network, Fallback to Cache
                     try {
-                        val apiResponse = api.fetchAllProperties()
+                        val apiResponse = api.fetchAllProperties(page, limit, null)
                         apiResponse.data?.let { properties ->
                             saveToCache(properties)
                             RequestState.Success(properties)
-                        } ?: RequestState.Success(cachedProperties) // Keep old data if server returns null
+                        } ?: RequestState.Success(cachedProperties)
                     } catch (e: Exception) {
                         // Network error -> Return Stale Cache
                         RequestState.Success(cachedProperties)
@@ -56,13 +77,31 @@ class PropertySDK(
                 }
             }
         } catch (e: Exception) {
-            // General Fallback
             val cachedProperties = repository.getLocalProperties()
             if (cachedProperties.isNotEmpty()) {
                 RequestState.Success(cachedProperties)
             } else {
                 RequestState.Error(e.message ?: "An unknown error occurred.")
             }
+        }
+    }
+
+    /**
+     * Fetches properties directly from network (no caching).
+     * Used when category filter is active to ensure fresh filtered results.
+     */
+    private suspend fun fetchFromNetwork(
+        page: Int,
+        limit: Int,
+        categoryId: String?
+    ): RequestState<List<Property>> {
+        return try {
+            val apiResponse = api.fetchAllProperties(page, limit, categoryId)
+            apiResponse.data?.let { properties ->
+                RequestState.Success(properties)
+            } ?: RequestState.Error(apiResponse.message.joinToString(", ").ifEmpty { "No properties found" })
+        } catch (e: Exception) {
+            RequestState.Error(e.message ?: "Failed to fetch properties")
         }
     }
 
@@ -103,18 +142,18 @@ class PropertySDK(
 
     private suspend fun fetchAndSave(): RequestState<List<Property>> {
         return try {
-            val apiResponse = api.fetchAllProperties()
+            val apiResponse = api.fetchAllProperties(page = 1, limit = 10, categoryId = null)
 
             when {
                 apiResponse.data != null -> {
                     saveToCache(apiResponse.data)
                     RequestState.Success(apiResponse.data)
                 }
-                apiResponse.message != null -> {
+                apiResponse.message.isNotEmpty() -> {
                     RequestState.Error(apiResponse.message.joinToString(", "))
                 }
                 else -> {
-                    RequestState.Error(apiResponse.message)
+                    RequestState.Error("No data available")
                 }
             }
         } catch (e: ClientRequestException) {
@@ -162,5 +201,9 @@ class PropertySDK(
         }
 
         return difference >= 5.minutes
+    }
+
+    suspend fun getCachedProperties(): List<Property> {
+        return repository.getLocalProperties()
     }
 }

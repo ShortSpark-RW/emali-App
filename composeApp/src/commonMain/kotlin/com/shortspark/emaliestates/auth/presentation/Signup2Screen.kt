@@ -3,7 +3,9 @@ package com.shortspark.emaliestates.auth.presentation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,6 +17,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,12 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
 import com.shortspark.emaliestates.domain.Countries
-import com.shortspark.emaliestates.navigation.BaseScreen
+import com.shortspark.emaliestates.domain.RequestState
+import com.shortspark.emaliestates.navigation.AuthScreen
+import com.shortspark.emaliestates.navigation.Graph
 import com.shortspark.emaliestates.util.components.auth.Gender
 import com.shortspark.emaliestates.util.components.auth.GenderAndDobRow
 import com.shortspark.emaliestates.util.components.auth.LogoSection
@@ -37,38 +42,64 @@ import com.shortspark.emaliestates.util.components.auth.PhoneNumberOutlinedTextF
 import com.shortspark.emaliestates.util.components.common.AppButton
 import com.shortspark.emaliestates.util.components.common.CommonOutlinedTextField
 import emaliestates.composeapp.generated.resources.Res
-import emaliestates.composeapp.generated.resources.email_icon
 import emaliestates.composeapp.generated.resources.full_name
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
 
 
 @Composable
 fun Signup2Screen(
     navController: NavController,
-//    viewModel: AuthViewModel = hiltViewModel()
 ) {
-
     Signup2Content(navController)
 }
+
 
 @Composable
 @Preview(showBackground = true)
 fun Signup2Content(
-    navController: NavController = rememberNavController(),
+    navController: NavController = androidx.navigation.compose.rememberNavController(),
 ) {
-    var fullname by remember { mutableStateOf("") }
-    var isFullnameFocused by remember { mutableStateOf(false) }
-    var phoneNumber by remember { mutableStateOf("") }
-    var isPhoneNumberFocused by remember { mutableStateOf(false) }
-    var selectedCountry by remember { mutableStateOf(Countries[144]) }
+    val authViewModel = koinViewModel<AuthViewModel>()
+    val signupState by authViewModel.signupState.collectAsState()
+    val credentials by authViewModel.signupCredentials.collectAsState()
 
+    // Listen for signup success and navigate
+    LaunchedEffect(signupState) {
+        if (signupState is RequestState.Success) {
+            navController.navigate(Graph.BASE) {
+                popUpTo(Graph.AUTHENTICATION) { inclusive = true }
+            }
+            authViewModel.clearSignupCredentials()
+            authViewModel.resetSignupState()
+        }
+    }
+
+    // Display error if any
+    val signupError = (signupState as? RequestState.Error)?.message
+
+    // If no credentials, cannot proceed
+    if (credentials == null) {
+        androidx.compose.material3.Text(
+            text = "Missing email or password. Please go back and fill the previous step.",
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(16.dp)
+        )
+        return
+    }
+    val (email, password) = credentials!!
+
+    var fullname by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
+    var selectedCountry by remember { mutableStateOf(Countries[144]) }
     var gender by remember { mutableStateOf(Gender.MALE) }
     var day by remember { mutableStateOf(15) }
     var month by remember { mutableStateOf(5) }
     var year by remember { mutableStateOf(1994) }
 
-
+    var fullnameError by mutableStateOf<String?>(null)
+    var phoneError by mutableStateOf<String?>(null)
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -87,45 +118,59 @@ fun Signup2Content(
                 subtitle = "Please enter your details"
             )
 
+            if (signupError != null) {
+                androidx.compose.material3.Text(
+                    text = signupError,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Full Name field with validation
             CommonOutlinedTextField(
                 value = fullname,
-                onValueChange = { fullname = it },
-                isFocused = isFullnameFocused,
-                onFocusChange = { isFullnameFocused = it.isFocused },
+                onValueChange = {
+                    fullname = it
+                    fullnameError = if (it.isBlank()) "Full name is required" else null
+                },
+                isFocused = false, // TODO: add focus state if needed
+                onFocusChange = {},
                 label = "Full Name",
                 placeholder = "Type your full name",
                 leadingIcon = {
-                    IconButton(
-                        onClick = {}
-                    ) {
+                    IconButton(onClick = {}) {
                         Icon(
                             painter = painterResource(Res.drawable.full_name),
                             contentDescription = "Fullname Icon",
-                            tint = if (isFullnameFocused) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                            tint = if (false) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                         )
                     }
                 },
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
+                imeAction = ImeAction.Next,
+            errorMessage = fullnameError ?: "",
+                isError = fullnameError != null
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Phone Number field with validation
             PhoneNumberOutlinedTextField(
                 phoneNumber = phoneNumber,
-                onPhoneNumberChange = { phoneNumber = it },
-
+                onPhoneNumberChange = {
+                    phoneNumber = it
+                    phoneError = if (it.isBlank()) "Phone number is required" else null
+                },
                 selectedCountry = selectedCountry,
-
                 onCountrySelected = { newCountry ->
                     selectedCountry = newCountry
                 },
-
-                isFocused = isPhoneNumberFocused,
-                onFocusChange = { isPhoneNumberFocused = it.isFocused },
-
+                isFocused = false,
+                onFocusChange = {},
+                errorMessage = phoneError ?: "",
+                isError = phoneError != null
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -153,8 +198,29 @@ fun Signup2Content(
                 text = "Register",
                 textColor = MaterialTheme.colorScheme.onSecondary,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
+                loading = signupState is RequestState.Loading,
                 onClick = {
-                    navController.navigate(BaseScreen.Home.route)
+                    // Validate required fields
+                    val fullErr = if (fullname.isBlank()) "Full name is required" else null
+                    val phoneErr = if (phoneNumber.isBlank()) "Phone number is required" else null
+
+                    fullnameError = fullErr
+                    phoneError = phoneErr
+
+                    if (fullErr != null || phoneErr != null) {
+                        return@AppButton
+                    }
+
+                    // Call signup with all collected data
+                    authViewModel.signup(
+                        email = email,
+                        password = password,
+                        fullName = fullname,
+                        phone = phoneNumber,
+                        gender = gender.name.lowercase(),
+                        dob = "${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}",
+                        username = null // Could use email or fullname as username if needed
+                    )
                 }
             )
         }

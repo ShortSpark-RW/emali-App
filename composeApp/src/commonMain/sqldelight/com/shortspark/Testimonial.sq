@@ -1,0 +1,56 @@
+CREATE TABLE Testimonial (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    propertyId TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    title TEXT,
+    isApproved INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT,
+    updatedAt TEXT,
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (propertyId) REFERENCES Property(id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_testimonial_userId ON Testimonial(userId);
+CREATE INDEX idx_testimonial_propertyId ON Testimonial(propertyId);
+CREATE INDEX idx_testimonial_rating ON Testimonial(rating);
+CREATE INDEX idx_testimonial_isApproved ON Testimonial(isApproved);
+CREATE INDEX idx_testimonial_createdAt ON Testimonial(createdAt);
+
+-- Queries
+insertTestimonial:
+INSERT INTO Testimonial (id, userId, propertyId, rating, comment, title, isApproved, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getTestimonialById:
+SELECT * FROM Testimonial WHERE id = ?;
+
+getTestimonialsByUserId:
+SELECT * FROM Testimonial WHERE userId = ? ORDER BY createdAt DESC;
+
+getTestimonialsByPropertyId:
+SELECT * FROM Testimonial WHERE propertyId = ? AND isApproved = 1 ORDER BY createdAt DESC;
+
+getApprovedTestimonialsByPropertyId:
+SELECT * FROM Testimonial WHERE propertyId = ? AND isApproved = 1 ORDER BY createdAt DESC;
+
+getAllTestimonials:
+SELECT * FROM Testimonial ORDER BY createdAt DESC;
+
+updateTestimonial:
+UPDATE Testimonial SET
+    rating = ?,
+    comment = ?,
+    title = ?,
+    isApproved = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteTestimonial:
+DELETE FROM Testimonial WHERE id = ?;
+
+clearAllTestimonials:
+DELETE FROM Testimonial;
+

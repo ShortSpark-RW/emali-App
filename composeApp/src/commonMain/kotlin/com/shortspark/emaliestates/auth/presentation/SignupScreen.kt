@@ -32,9 +32,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
 import com.shortspark.emaliestates.navigation.AuthScreen
-import com.shortspark.emaliestates.navigation.BaseScreen
+import com.shortspark.emaliestates.domain.auth.validation.ValidationRules
 import com.shortspark.emaliestates.util.components.auth.EmailOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.LogoSection
 import com.shortspark.emaliestates.util.components.auth.OrDivider
@@ -42,32 +42,36 @@ import com.shortspark.emaliestates.util.components.auth.PasswordOutlinedTextFiel
 import com.shortspark.emaliestates.util.components.auth.SocialAuthButtons
 import com.shortspark.emaliestates.util.components.common.AppButton
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
 
 
 @Composable
 fun SignupScreen(
     navController: NavController,
-//    viewModel: AuthViewModel = hiltViewModel()
 ) {
-
     SignupContent(navController)
 }
+
 
 @Composable
 @Preview(showBackground = true)
 fun SignupContent(
-    navController: NavController = rememberNavController(),
+    navController: NavController = androidx.navigation.compose.rememberNavController(),
 ) {
+    val authViewModel = koinViewModel<AuthViewModel>()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isChecked by remember { mutableStateOf(false) }
+    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisibility by remember { mutableStateOf(false) }
+    var confirmPasswordVisibility by remember { mutableStateOf(false) }
     var isEmailFocused by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
     var isConfirmPasswordFocused by remember { mutableStateOf(false) }
-    var confirmPassword by remember { mutableStateOf("") }
-    var confirmPasswordVisibility by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
+
+    var emailError by mutableStateOf<String?>(null)
+    var passwordError by mutableStateOf<String?>(null)
+    var confirmPasswordError by mutableStateOf<String?>(null)
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -88,54 +92,70 @@ fun SignupContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Email field
             EmailOutlinedTextField(
                 email = email,
-                onEmailChange = { email = it },
+                onEmailChange = {
+                    email = it
+                    emailError = ValidationRules.validateEmail(it)
+                },
                 isEmailFocused = isEmailFocused,
                 onFocusChange = { isEmailFocused = it.isFocused },
-                imeAction = ImeAction.Next
+                imeAction = ImeAction.Next,
+                errorMessage = emailError ?: "",
+                isError = emailError != null
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Password field
             PasswordOutlinedTextField(
                 value = password,
                 onValueChange = {
                     password = it
-                    errorMessage = ""
+                    passwordError = ValidationRules.validatePassword(it)
+                    // Clear confirm error if passwords now match
+                    if (confirmPassword.isNotBlank() && it == confirmPassword) {
+                        confirmPasswordError = null
+                    }
                 },
-                label = "Password",
-                modifier = Modifier.fillMaxWidth(),
+                isPasswordFocused = isPasswordFocused,
+                onFocusChange = { isPasswordFocused = it.isFocused },
                 passwordVisibility = passwordVisibility,
                 onVisibilityChange = { passwordVisibility = it },
-                isPasswordFocused = isPasswordFocused,
                 imeAction = ImeAction.Next,
-                onFocusChange = { isPasswordFocused = it.isFocused }
+                errorMessage = passwordError ?: "",
+                isError = passwordError != null
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Confirm Password field
             PasswordOutlinedTextField(
                 value = confirmPassword,
                 onValueChange = {
                     confirmPassword = it
-                    errorMessage = ""
+                    confirmPasswordError = if (it != password) {
+                        "Passwords do not match"
+                    } else {
+                        null
+                    }
                 },
                 label = "Confirm Password",
                 placeholder = "Confirm your password",
-                modifier = Modifier.fillMaxWidth(),
+                isPasswordFocused = isConfirmPasswordFocused,
+                onFocusChange = { isConfirmPasswordFocused = it.isFocused },
                 passwordVisibility = confirmPasswordVisibility,
                 onVisibilityChange = { confirmPasswordVisibility = it },
-                isPasswordFocused = isConfirmPasswordFocused,
                 imeAction = ImeAction.Done,
-                onFocusChange = { isConfirmPasswordFocused = it.isFocused }
+                errorMessage = confirmPasswordError ?: "",
+                isError = confirmPasswordError != null
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(), // Optional padding
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -144,18 +164,12 @@ fun SignupContent(
                     horizontalArrangement = Arrangement.Start
                 ) {
                     Checkbox(
-                        modifier = Modifier.padding(end = 2.dp),
-                        checked = isChecked,
-                        onCheckedChange = {
-                            isChecked = !isChecked
-                        },
+                        checked = false,
+                        onCheckedChange = { },
                         colors = CheckboxDefaults.colors(
                             checkedColor = MaterialTheme.colorScheme.secondary,
                             uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             checkmarkColor = MaterialTheme.colorScheme.primary,
-                            disabledUncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            disabledCheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            disabledIndeterminateColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         ),
                     )
                     Text(
@@ -187,8 +201,30 @@ fun SignupContent(
                 textColor = MaterialTheme.colorScheme.onSecondary,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
                 onClick = {
+                    // Validate all fields using centralized validation
+                    val validationResults = ValidationRules.validateSignUp(
+                        email = email,
+                        password = password,
+                        confirmPassword = confirmPassword
+                    )
+
+                    val emailErr = validationResults["email"]
+                    val passErr = validationResults["password"]
+                    val confirmErr = validationResults["confirmPassword"]
+
+                    if (emailErr != null || passErr != null || confirmErr != null) {
+                        emailError = emailErr
+                        passwordError = passErr
+                        confirmPasswordError = confirmErr
+                        return@AppButton
+                    }
+
+                    // Store credentials in ViewModel for next screen
+                    authViewModel.setSignupCredentials(email, password)
+
+                    // Navigate to next step
                     navController.navigate(AuthScreen.SignUp2.route)
-                }
+                },
             )
 
             OrDivider()
@@ -199,7 +235,7 @@ fun SignupContent(
 
             Text(
                 buildAnnotatedString {
-                    append("Already have an accounrt?")
+                    append("Already have an account?")
                     withStyle(
                         style = SpanStyle(
                             color = MaterialTheme.colorScheme.secondary,

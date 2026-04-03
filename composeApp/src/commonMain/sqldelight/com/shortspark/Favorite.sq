@@ -1,0 +1,41 @@
+CREATE TABLE Favorite (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    propertyId TEXT NOT NULL,
+    createdAt TEXT NOT NULL,
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (propertyId) REFERENCES Property(id) ON DELETE CASCADE,
+    UNIQUE (userId, propertyId)
+);
+
+-- Indexes
+CREATE INDEX idx_favorite_userId ON Favorite(userId);
+CREATE INDEX idx_favorite_propertyId ON Favorite(propertyId);
+CREATE INDEX idx_favorite_createdAt ON Favorite(createdAt);
+
+-- Queries
+insertFavorite:
+INSERT INTO Favorite (id, userId, propertyId, createdAt)
+VALUES (?, ?, ?, ?);
+
+getFavoriteById:
+SELECT * FROM Favorite WHERE id = ?;
+
+getFavoritesByUserId:
+SELECT * FROM Favorite WHERE userId = ? ORDER BY createdAt DESC;
+
+getFavoriteByUserAndProperty:
+SELECT * FROM Favorite WHERE userId = ? AND propertyId = ?;
+
+getAllFavorites:
+SELECT * FROM Favorite ORDER BY createdAt DESC;
+
+deleteFavorite:
+DELETE FROM Favorite WHERE id = ?;
+
+deleteFavoriteByUserAndProperty:
+DELETE FROM Favorite WHERE userId = ? AND propertyId = ?;
+
+clearAllFavorites:
+DELETE FROM Favorite;
+

@@ -1,0 +1,51 @@
+CREATE TABLE Reservation (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    propertyId TEXT NOT NULL,
+    shareId TEXT,
+    status TEXT NOT NULL DEFAULT 'PENDING', -- PENDING, CONFIRMED, EXPIRED, CANCELLED
+    reservedAt TEXT NOT NULL,
+    expiresAt TEXT NOT NULL,
+    createdAt TEXT,
+    updatedAt TEXT,
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (propertyId) REFERENCES Property(id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_reservation_userId ON Reservation(userId);
+CREATE INDEX idx_reservation_propertyId ON Reservation(propertyId);
+CREATE INDEX idx_reservation_status ON Reservation(status);
+CREATE INDEX idx_reservation_expiresAt ON Reservation(expiresAt);
+CREATE INDEX idx_reservation_createdAt ON Reservation(createdAt);
+
+-- Queries
+insertReservation:
+INSERT INTO Reservation (id, userId, propertyId, shareId, status, reservedAt, expiresAt, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getReservationById:
+SELECT * FROM Reservation WHERE id = ?;
+
+getReservationsByUserId:
+SELECT * FROM Reservation WHERE userId = ? ORDER BY reservedAt DESC;
+
+getReservationsByPropertyId:
+SELECT * FROM Reservation WHERE propertyId = ? ORDER BY reservedAt DESC;
+
+getActiveReservations:
+SELECT * FROM Reservation WHERE status IN ('pending', 'confirmed') AND expiresAt > datetime('now') ORDER BY reservedAt DESC;
+
+updateReservation:
+UPDATE Reservation SET
+    status = ?,
+    expiresAt = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteReservation:
+DELETE FROM Reservation WHERE id = ?;
+
+clearAllReservations:
+DELETE FROM Reservation;
+

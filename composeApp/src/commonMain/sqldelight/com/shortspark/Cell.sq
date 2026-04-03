@@ -1,0 +1,42 @@
+CREATE TABLE Cell (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    sectorId TEXT NOT NULL,
+    code TEXT,
+    createdAt TEXT,
+    updatedAt TEXT,
+    FOREIGN KEY (sectorId) REFERENCES Sector(id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_cell_name ON Cell(name);
+CREATE INDEX idx_cell_sectorId ON Cell(sectorId);
+
+-- Queries
+insertCell:
+INSERT INTO Cell (id, name, sectorId, code, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+getCellById:
+SELECT * FROM Cell WHERE id = ?;
+
+getCellsBySectorId:
+SELECT * FROM Cell WHERE sectorId = ? ORDER BY name ASC;
+
+getAllCells:
+SELECT * FROM Cell ORDER BY name ASC;
+
+updateCell:
+UPDATE Cell SET
+    name = ?,
+    sectorId = ?,
+    code = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteCell:
+DELETE FROM Cell WHERE id = ?;
+
+clearAllCells:
+DELETE FROM Cell;
+

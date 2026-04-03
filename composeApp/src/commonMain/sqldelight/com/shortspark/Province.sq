@@ -1,0 +1,35 @@
+CREATE TABLE Province (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    code TEXT,
+    createdAt TEXT,
+    updatedAt TEXT
+);
+
+-- Indexes
+CREATE INDEX idx_province_name ON Province(name);
+
+-- Queries
+insertProvince:
+INSERT INTO Province (id, name, code, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?);
+
+getProvinceById:
+SELECT * FROM Province WHERE id = ?;
+
+getAllProvinces:
+SELECT * FROM Province ORDER BY name ASC;
+
+updateProvince:
+UPDATE Province SET
+    name = ?,
+    code = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteProvince:
+DELETE FROM Province WHERE id = ?;
+
+clearAllProvinces:
+DELETE FROM Province;
+

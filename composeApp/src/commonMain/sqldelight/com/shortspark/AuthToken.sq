@@ -1,12 +1,14 @@
 CREATE TABLE AuthToken (
     id INTEGER NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
     accessToken TEXT NOT NULL,
     refreshToken TEXT NOT NULL,
-    expiresAt TEXT NOT NULL
+    expiresAt TEXT,
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
 );
 
 insertToken:
-INSERT OR REPLACE INTO AuthToken(id, accessToken, refreshToken, expiresAt) VALUES (0, ?, ?, ?);
+INSERT OR REPLACE INTO AuthToken(id, userId, accessToken, refreshToken, expiresAt) VALUES (0, ?, ?, ?, ?);
 
 getToken:
 SELECT * FROM AuthToken WHERE id = 0;

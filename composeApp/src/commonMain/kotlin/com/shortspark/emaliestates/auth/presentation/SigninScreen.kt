@@ -42,12 +42,16 @@ import com.shortspark.emaliestates.domain.auth.User
 import com.shortspark.emaliestates.navigation.AuthScreen
 import com.shortspark.emaliestates.navigation.BaseScreen
 import com.shortspark.emaliestates.navigation.Graph
+import com.shortspark.emaliestates.domain.auth.validation.ValidationRules
 import com.shortspark.emaliestates.util.components.auth.EmailOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.LogoSection
 import com.shortspark.emaliestates.util.components.auth.OrDivider
 import com.shortspark.emaliestates.util.components.auth.PasswordOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.SocialAuthButtons
 import com.shortspark.emaliestates.util.components.common.AppButton
+import com.shortspark.emaliestates.util.helpers.ErrorMessageMapper
+import com.shortspark.emaliestates.util.helpers.logger
+import com.shortspark.emaliestates.util.helpers.loggerFor
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -59,30 +63,13 @@ data class SignInUiState(
     val passwordError: String? = null
 )
 
-private fun validateEmail(email: String): String? {
-    val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
-    return when {
-        email.isBlank() -> "Email is required"
-        !emailRegex.matches(email) -> "Enter a valid email address"
-        else -> null
-    }
-}
-private fun validatePassword(password: String): String? {
-    val passwordRegex = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")
-    return when {
-        password.isBlank() -> "Password is required"
-        password.length < 8 -> "Password must be at least 8 characters long"
-        !passwordRegex.matches(password) -> "Password must contain an uppercase letter, a number, and a special character"
-        else -> null
-    }
-}
-
 @Composable
 fun SigninScreen(
     navController: NavController,
 ) {
     val authViewModel = koinViewModel<AuthViewModel>()
     val loginState by authViewModel.loginState.collectAsState()
+    val rememberedEmail = authViewModel.rememberedEmail
 
     LaunchedEffect(loginState) {
         if (loginState is RequestState.Success) {
@@ -94,8 +81,9 @@ fun SigninScreen(
 
     SigninContent(
         loginState = loginState,
-        onLogin = { email, password ->
-            authViewModel.login(email, password)
+        initialEmail = rememberedEmail.orEmpty(),
+        onLogin = { email, password, rememberMe ->
+            authViewModel.login(email, password, rememberMe)
         },
         onSignup = {
             navController.navigate(AuthScreen.SignUp.route)
@@ -110,11 +98,13 @@ fun SigninScreen(
 @Preview(showBackground = true)
 fun SigninContent(
     loginState: RequestState<*> = RequestState.Idle,
-    onLogin: (String, String) -> Unit = { _, _ -> },
+    initialEmail: String = "",
+    onLogin: (String, String, Boolean) -> Unit = { _, _, _ -> },
     onForgotPassword: () -> Unit = {},
     onSignup: () -> Unit = {}
 ) {
-    var state by remember { mutableStateOf(SignInUiState()) }
+    val logger = loggerFor("SigninContent")
+    var state by remember { mutableStateOf(SignInUiState(email = initialEmail)) }
     var passwordVisibility by remember { mutableStateOf(false) }
     var isEmailFocused by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
@@ -137,9 +127,11 @@ fun SigninContent(
 
             /* ---------- API Error ---------- */
             if (loginState is RequestState.Error) {
-                println(loginState.message)
+                val errorMessage = loginState.message
+                errorMessage?.let { logger.error(it) }
+                val friendlyMessage = ErrorMessageMapper.getFriendlyMessage(errorMessage)
                 Text(
-                    text = loginState.message.toString(),
+                    text = friendlyMessage,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
@@ -152,7 +144,7 @@ fun SigninContent(
             EmailOutlinedTextField(
                 email = state.email,
                 onEmailChange = {
-                    val emailError = validateEmail(it)
+                    val emailError = ValidationRules.validateEmail(it)
                     state = state.copy(email = it, emailError = emailError)
                 },
                 isEmailFocused = isEmailFocused,
@@ -168,7 +160,7 @@ fun SigninContent(
             PasswordOutlinedTextField(
                 value = state.password,
                 onValueChange = {
-                    val passwordError = validatePassword(it)
+                    val passwordError = ValidationRules.validatePassword(it)
                     state = state.copy(password = it, passwordError = passwordError)
                 },
                 isPasswordFocused = isPasswordFocused,
@@ -223,8 +215,21 @@ fun SigninContent(
                 textColor = MaterialTheme.colorScheme.onSecondary,
                 loading = loginState is RequestState.Loading,
                 onClick = {
+                    // Validate all fields before attempting login
+                    val emailErr = ValidationRules.validateEmail(state.email)
+                    val passErr = ValidationRules.validatePassword(state.password)
 
-                    onLogin(state.email, state.password)
+                    // Update UI state with validation errors
+                    if (emailErr != null || passErr != null) {
+                        state = state.copy(
+                            emailError = emailErr,
+                            passwordError = passErr
+                        )
+                        return@AppButton
+                    }
+
+                    // All valid - proceed with login
+                    onLogin(state.email, state.password, state.rememberMe)
                 },
             )
 

@@ -1,0 +1,50 @@
+CREATE TABLE FAQ (
+    id TEXT NOT NULL PRIMARY KEY,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    category TEXT,
+    isActive INTEGER NOT NULL DEFAULT 1,
+    createdAt TEXT,
+    updatedAt TEXT
+);
+
+-- Indexes
+CREATE INDEX idx_faq_sortOrder ON FAQ(sortOrder);
+CREATE INDEX idx_faq_category ON FAQ(category);
+CREATE INDEX idx_faq_isActive ON FAQ(isActive);
+CREATE INDEX idx_faq_createdAt ON FAQ(createdAt);
+
+-- Queries
+insertFAQ:
+INSERT INTO FAQ (id, question, answer, sortOrder, category, isActive, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+getFAQById:
+SELECT * FROM FAQ WHERE id = ?;
+
+getAllFAQs:
+SELECT * FROM FAQ ORDER BY sortOrder ASC, createdAt DESC;
+
+getActiveFAQs:
+SELECT * FROM FAQ WHERE isActive = 1 ORDER BY sortOrder ASC, createdAt DESC;
+
+getFAQsByCategory:
+SELECT * FROM FAQ WHERE category = ? AND isActive = 1 ORDER BY sortOrder ASC;
+
+updateFAQ:
+UPDATE FAQ SET
+    question = ?,
+    answer = ?,
+    sortOrder = ?,
+    category = ?,
+    isActive = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteFAQ:
+DELETE FROM FAQ WHERE id = ?;
+
+clearAllFAQs:
+DELETE FROM FAQ;
+

@@ -1,0 +1,63 @@
+CREATE TABLE Place (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    province TEXT,
+    district TEXT,
+    sector TEXT,
+    cell TEXT,
+    village TEXT,
+    postalCode TEXT,
+    image TEXT,
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    isActive INTEGER NOT NULL DEFAULT 1,
+    createdAt TEXT,
+    updatedAt TEXT
+);
+
+-- Indexes
+CREATE INDEX idx_place_name ON Place(name);
+CREATE INDEX idx_place_province ON Place(province);
+CREATE INDEX idx_place_district ON Place(district);
+CREATE INDEX idx_place_isActive ON Place(isActive);
+
+-- Queries
+insertPlace:
+INSERT INTO Place (id, name, province, district, sector, cell, village, postalCode, image, sortOrder, isActive, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getPlaceById:
+SELECT * FROM Place WHERE id = ?;
+
+getAllPlaces:
+SELECT * FROM Place ORDER BY sortOrder ASC, name ASC;
+
+getActivePlaces:
+SELECT * FROM Place WHERE isActive = 1 ORDER BY sortOrder ASC, name ASC;
+
+getPlacesByProvince:
+SELECT * FROM Place WHERE province = ? AND isActive = 1 ORDER BY sortOrder ASC, name ASC;
+
+getPlacesByDistrict:
+SELECT * FROM Place WHERE district = ? AND isActive = 1 ORDER BY sortOrder ASC, name ASC;
+
+updatePlace:
+UPDATE Place SET
+    name = ?,
+    province = ?,
+    district = ?,
+    sector = ?,
+    cell = ?,
+    village = ?,
+    postalCode = ?,
+    image = ?,
+    sortOrder = ?,
+    isActive = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deletePlace:
+DELETE FROM Place WHERE id = ?;
+
+clearAllPlaces:
+DELETE FROM Place;
+

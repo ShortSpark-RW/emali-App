@@ -1,0 +1,81 @@
+CREATE TABLE User (
+    id TEXT NOT NULL PRIMARY KEY,
+    email TEXT NOT NULL,
+    phone TEXT,
+    username TEXT UNIQUE,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL, -- CLIENT, AGENT, OWNER
+
+    -- Optional profile fields
+    gender TEXT,
+    dob TEXT, -- YYYY-MM-DD
+    address TEXT,
+    country TEXT,
+    province TEXT,
+    district TEXT,
+    whatsapp TEXT,
+    profileImg TEXT,
+    coverImg TEXT,
+    language TEXT, -- EN, FR, SW, RW
+
+    -- Status flags
+    isActive INTEGER NOT NULL DEFAULT 1,
+    isVerified INTEGER NOT NULL DEFAULT 0,
+
+    -- Timestamps
+    createdAt TEXT,
+    updatedAt TEXT
+);
+
+-- Indexes
+CREATE INDEX idx_user_email ON User(email);
+CREATE INDEX idx_user_phone ON User(phone);
+CREATE INDEX idx_user_username ON User(username);
+CREATE INDEX idx_user_role ON User(role);
+CREATE UNIQUE INDEX idx_user_email_unique ON User(email);
+
+-- Queries
+insertUser:
+INSERT INTO User (id, email, phone, username, name, role, gender, dob, address, country, province, district, whatsapp, profileImg, coverImg, language, isActive, isVerified, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getUserById:
+SELECT * FROM User WHERE id = ?;
+
+getUserByEmail:
+SELECT * FROM User WHERE email = ?;
+
+getUserByUsername:
+SELECT * FROM User WHERE username = ?;
+
+getAllUsers:
+SELECT * FROM User ORDER BY name ASC;
+
+updateUser:
+UPDATE User SET
+    email = ?,
+    phone = ?,
+    username = ?,
+    name = ?,
+    role = ?,
+    gender = ?,
+    dob = ?,
+    address = ?,
+    country = ?,
+    province = ?,
+    district = ?,
+    whatsapp = ?,
+    profileImg = ?,
+    coverImg = ?,
+    language = ?,
+    isActive = ?,
+    isVerified = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteUser:
+DELETE FROM User WHERE id = ?;
+
+clearAllUsers:
+DELETE FROM User;
+

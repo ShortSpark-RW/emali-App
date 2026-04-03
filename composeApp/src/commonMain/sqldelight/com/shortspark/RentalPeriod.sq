@@ -1,0 +1,57 @@
+CREATE TABLE RentalPeriod (
+    id TEXT NOT NULL PRIMARY KEY,
+    propertyId TEXT NOT NULL,
+    periodType TEXT NOT NULL, -- DAILY, MONTHLY, YEARLY
+    price REAL NOT NULL,
+    minNights INTEGER,
+    maxNights INTEGER,
+    availableFrom TEXT,
+    availableTo TEXT,
+    isActive INTEGER NOT NULL DEFAULT 1,
+    createdAt TEXT,
+    updatedAt TEXT,
+    FOREIGN KEY (propertyId) REFERENCES Property(id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_rentalPeriod_propertyId ON RentalPeriod(propertyId);
+CREATE INDEX idx_rentalPeriod_periodType ON RentalPeriod(periodType);
+CREATE INDEX idx_rentalPeriod_isActive ON RentalPeriod(isActive);
+CREATE INDEX idx_rentalPeriod_availableFrom ON RentalPeriod(availableFrom);
+CREATE INDEX idx_rentalPeriod_availableTo ON RentalPeriod(availableTo);
+
+-- Queries
+insertRentalPeriod:
+INSERT INTO RentalPeriod (id, propertyId, periodType, price, minNights, maxNights, availableFrom, availableTo, isActive, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getRentalPeriodById:
+SELECT * FROM RentalPeriod WHERE id = ?;
+
+getRentalPeriodsByPropertyId:
+SELECT * FROM RentalPeriod WHERE propertyId = ? ORDER BY price ASC;
+
+getActiveRentalPeriodsByPropertyId:
+SELECT * FROM RentalPeriod WHERE propertyId = ? AND isActive = 1 ORDER BY periodType ASC;
+
+getAllRentalPeriods:
+SELECT * FROM RentalPeriod ORDER BY createdAt DESC;
+
+updateRentalPeriod:
+UPDATE RentalPeriod SET
+    periodType = ?,
+    price = ?,
+    minNights = ?,
+    maxNights = ?,
+    availableFrom = ?,
+    availableTo = ?,
+    isActive = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteRentalPeriod:
+DELETE FROM RentalPeriod WHERE id = ?;
+
+clearAllRentalPeriods:
+DELETE FROM RentalPeriod;
+

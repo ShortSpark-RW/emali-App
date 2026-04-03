@@ -14,9 +14,20 @@ class PropertyApi(
     private val httpClient: HttpClient
 ) {
 
-    suspend fun fetchAllProperties(): ApiSuccessResponse<List<Property>> {
-        println("INFO: Fetching properties...")
-        val response = httpClient.get("${AppConstants.ALL_PROPERTIES_ENDPOINT}/properties?limit=10&page=1")
+    suspend fun fetchAllProperties(
+        page: Int = 1,
+        limit: Int = 10,
+        categoryId: String? = null
+    ): ApiSuccessResponse<List<Property>> {
+        println("INFO: Fetching properties... page=$page, limit=$limit, categoryId=$categoryId")
+        // Build query parameters
+        val queryParams = mutableListOf("limit=$limit", "page=$page")
+        categoryId?.let {
+            queryParams.add("categoryId=$it")
+        }
+        val queryString = queryParams.joinToString("&")
+        val url = "${AppConstants.ALL_PROPERTIES_ENDPOINT}/properties?$queryString"
+        val response = httpClient.get(url)
         return when (response.status.value) {
             in 200..299 -> response.body()
             else -> {

@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import com.codingfeline.buildkonfig.compiler.FieldSpec
 import java.util.Properties
 
@@ -15,14 +16,14 @@ plugins {
 
 kotlin {
     androidTarget {
-        // FIX: Configure JVM target here using compilations
+        // Configure JVM target and language version
         compilations.all {
             compileTaskProvider.configure {
-                compilerOptions {
-                    jvmTarget.set(JvmTarget.JVM_11)
-                    // Explicitly set API version to match Kotlin 2.2
-                    apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
-                    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+                kotlinOptions {
+                    jvmTarget = "11"
+                    apiVersion = "2.2"
+                    languageVersion = "2.2"
+                    freeCompilerArgs += "-Xexpect-actual-classes"
                 }
             }
         }
@@ -32,6 +33,15 @@ kotlin {
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
+        iosTarget.compilations.all {
+            compileTaskProvider.configure {
+                kotlinOptions {
+                    apiVersion = "2.2"
+                    languageVersion = "2.2"
+                    freeCompilerArgs += "-Xexpect-actual-classes"
+                }
+            }
+        }
         iosTarget.binaries.framework {
             export(libs.androidx.lifecycle.viewmodel)
             baseName = "ComposeApp"
@@ -95,6 +105,7 @@ kotlin {
 
     sourceSets.all {
         languageSettings.optIn("kotlin.experimental.ExperimentalObjCName")
+        languageSettings.optIn("kotlin.time.ExperimentalTime")
     }
 }
 

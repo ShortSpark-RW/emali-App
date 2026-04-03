@@ -32,13 +32,11 @@ class PropertyDetailViewModel(
             _propertyState.value = propertySDK.fetchPropertyById(propertyId)
 
             // Load similar properties (same type, excluding self)
-            val allResult = propertySDK.getAllProperties()
-            if (allResult is RequestState.Success) {
-                val current = (_propertyState.value as? RequestState.Success)?.data
-                _similarProperties.value = allResult.data
-                    .filter { it.id != propertyId && it.type == current?.type }
-                    .take(6)
-            }
+            // Use only cache to avoid unnecessary network calls
+            val cachedProperties = propertySDK.getCachedProperties()
+            _similarProperties.value = cachedProperties
+                .filter { it.id != propertyId && it.type == (_propertyState.value as? RequestState.Success)?.data?.type }
+                .take(6)
         }
     }
 

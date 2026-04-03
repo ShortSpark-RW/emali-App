@@ -1,0 +1,57 @@
+CREATE TABLE Notification (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    type TEXT, -- SYSTEM, PROPERTY, RESERVATION, PAYMENT, MESSAGE, ALERT
+    data TEXT, -- JSON map as string
+    isRead INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT,
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_notification_userId ON Notification(userId);
+CREATE INDEX idx_notification_isRead ON Notification(isRead);
+CREATE INDEX idx_notification_createdAt ON Notification(createdAt);
+CREATE INDEX idx_notification_type ON Notification(type);
+
+-- Queries
+insertNotification:
+INSERT INTO Notification (id, userId, title, body, type, data, isRead, createdAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+getNotificationById:
+SELECT * FROM Notification WHERE id = ?;
+
+getNotificationsByUserId:
+SELECT * FROM Notification WHERE userId = ? ORDER BY createdAt DESC;
+
+getUnreadNotificationsByUserId:
+SELECT * FROM Notification WHERE userId = ? AND isRead = 0 ORDER BY createdAt DESC;
+
+getAllNotifications:
+SELECT * FROM Notification ORDER BY createdAt DESC;
+
+markNotificationAsRead:
+UPDATE Notification SET isRead = 1 WHERE id = ?;
+
+markAllNotificationsAsReadForUser:
+UPDATE Notification SET isRead = 1 WHERE userId = ? AND isRead = 0;
+
+updateNotification:
+UPDATE Notification SET
+    title = ?,
+    body = ?,
+    type = ?,
+    data = ?,
+    updatedAt = ?
+WHERE id = ?;
+
+deleteNotification:
+DELETE FROM Notification WHERE id = ?;
+
+clearAllNotifications:
+DELETE FROM Notification;
+

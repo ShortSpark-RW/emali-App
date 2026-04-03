@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +39,8 @@ import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
 import com.shortspark.emaliestates.data.repository.AuthRepository
 import com.shortspark.emaliestates.navigation.Graph
 import org.koin.compose.koinInject
+import com.shortspark.emaliestates.home.presentation.HomeScreen
+import com.shortspark.emaliestates.home.presentation.ProfileScreen
 
 // ─── Bottom Nav Destinations ─────────────────────────────────────────────────
 
@@ -77,10 +81,10 @@ fun MainScreen1(navController: NavController) {
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedRoute) {
-                BottomNavItem.Home.route -> HomeScreen1(navController = navController)
+                BottomNavItem.Home.route -> HomeScreen(navController = navController)
                 BottomNavItem.Map.route -> PlaceholderScreen("Map")
                 BottomNavItem.Tours.route -> PlaceholderScreen("eTours")
-                BottomNavItem.Profile.route -> PlaceholderScreen("Profile", navController = navController)
+                BottomNavItem.Profile.route -> ProfileScreen(navController = navController)
             }
         }
     }
@@ -152,7 +156,7 @@ fun BottomNavItemView(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = item.label,
+            contentDescription = "${item.label} navigation tab", // ACCESSIBILITY: Describe navigation item
             tint = iconColor,
             modifier = Modifier.size(24.dp)
         )
@@ -208,6 +212,9 @@ fun AddFabButton(onClick: () -> Unit) {
     }
 }
 
+// ACCESSIBILITY: The FAB should have contentDescription when used, e.g.:
+// Modifier.semantics { contentDescription = "Add new property" }
+
 // ─── Placeholder ─────────────────────────────────────────────────────────────
 
 @Composable
@@ -234,33 +241,18 @@ fun PlaceholderScreen(
             fontSize = 20.sp,
             fontWeight = FontWeight.SemiBold
         )
-        Button(
-            onClick = {
-                // 3. Perform Logout
-                authViewModel.logout()
 
-                // 4. Navigate back to Login Screen
-                navController?.navigate(Graph.AUTHENTICATION) {
-                    // Clear the backstack so they can't press "Back" to return here
-                    popUpTo(Graph.BASE) { inclusive = true }
-                }
-            },
-        ) {
-            Text("Sign Out")
-        }
-
+        // Show sign out button only if user is logged in (token exists)
         if (token != null) {
             Button(
                 onClick = {
-                    // 3. Perform Logout
                     authViewModel.logout()
-
-                    // 4. Navigate back to Login Screen
                     navController?.navigate(Graph.AUTHENTICATION) {
-                        // Clear the backstack so they can't press "Back" to return here
                         popUpTo(Graph.BASE) { inclusive = true }
                     }
                 },
+                // ACCESSIBILITY: Clear description for sign out action
+                modifier = Modifier.semantics { contentDescription = "Sign out" }
             ) {
                 Text("Sign Out")
             }

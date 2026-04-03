@@ -78,7 +78,8 @@ fun PhoneNumberOutlinedTextField(
     onFocusChange: (FocusState) -> Unit,
 
     modifier: Modifier = Modifier,
-    isError: Boolean = false
+    isError: Boolean = false,
+    errorMessage: String = ""
 ) {
     var showPicker by remember { mutableStateOf(false) }
 
@@ -104,6 +105,7 @@ fun PhoneNumberOutlinedTextField(
         keyboardType = KeyboardType.Phone,
         imeAction = ImeAction.Done,
         isError = isError,
+        errorMessage = errorMessage,
         leadingIcon = {
             TextButton(
                 onClick = { showPicker = true },

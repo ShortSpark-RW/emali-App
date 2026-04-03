@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,12 @@ import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,12 +32,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
+import com.shortspark.emaliestates.domain.RequestState
 import com.shortspark.emaliestates.navigation.AuthScreen
 import com.shortspark.emaliestates.util.components.auth.LogoSection
 import com.shortspark.emaliestates.util.components.auth.OtpInput
 import com.shortspark.emaliestates.util.components.common.AppButton
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
+
 
 @Composable
 fun VerifyOtpScreen(
@@ -39,17 +49,52 @@ fun VerifyOtpScreen(
     VerifyOtpContent(navController)
 }
 
+
 @Composable
 @Preview(showBackground = true)
 fun VerifyOtpContent(
-    navController: NavController = rememberNavController()
+    navController: NavController = androidx.navigation.compose.rememberNavController(),
 ) {
+    val authViewModel = koinViewModel<AuthViewModel>()
+    val verifyOtpState by authViewModel.verifyOtpState.collectAsState()
+    val refreshOtpState by authViewModel.refreshOtpState.collectAsState()
+    val verificationEmail by authViewModel.verificationEmail.collectAsState()
 
+    LaunchedEffect(verifyOtpState) {
+        if (verifyOtpState is RequestState.Success) {
+            // OTP verified, proceed to change password
+            navController.navigate(AuthScreen.ChangePassword.route)
+            // Reset state to avoid re-trigger when coming back
+            authViewModel.resetVerifyOtpState()
+        }
+    }
 
+    LaunchedEffect(refreshOtpState) {
+        if (refreshOtpState is RequestState.Success) {
+            // OTP resent, could show a message
+            authViewModel.resetRefreshOtpState()
+        }
+    }
+
+    val verifyOtpError = (verifyOtpState as? RequestState.Error)?.message
+    val refreshOtpError = (refreshOtpState as? RequestState.Error)?.message
+
+    // If no email in ViewModel, something went wrong; show error
+    val email = verificationEmail
+    if (email == null) {
+        androidx.compose.material3.Text(
+            text = "No email address found. Please go back and try again.",
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(16.dp)
+        )
+        return
+    }
+
+    var otp by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier.fillMaxSize(),
-    ){
+    ) {
 
         Column(
             modifier = Modifier
@@ -71,6 +116,14 @@ fun VerifyOtpContent(
                         title = "Verify email",
                         subtitle = "Verify your email below to proceed"
                     )
+
+                    if (verifyOtpError != null) {
+                        androidx.compose.material3.Text(
+                            text = verifyOtpError,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
                 }
             )
 
@@ -79,18 +132,26 @@ fun VerifyOtpContent(
                     .fillMaxWidth()
                     .fillMaxHeight(0.7f),
                 horizontalAlignment = Alignment.CenterHorizontally,
-            )
-            {
+            ) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OtpInput(
                     length = 5,
                     onComplete = {
-                        // Handle OTP completion
+                        otp = it
                     }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
+
+                val refreshError = refreshOtpState as? RequestState.Error
+                if (refreshError != null) {
+                    androidx.compose.material3.Text(
+                        text = refreshError.message ?: "Failed to resend code",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                }
 
                 Text(
                     buildAnnotatedString {
@@ -109,22 +170,23 @@ fun VerifyOtpContent(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                val isLoadingResend = refreshOtpState is RequestState.Loading
                 Text(
                     buildAnnotatedString {
                         append("Didn't receive a code?")
                         withStyle(
                             style = SpanStyle(
-                                color = MaterialTheme.colorScheme.secondary,
+                                color = if (isLoadingResend) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Normal,
                             )
                         ) {
                             append(" Resend code")
                         }
                     },
-                    modifier = Modifier.clickable {
-//                        navController.navigate(AuthScreen.SignUp.route)
+                    modifier = Modifier.clickable(enabled = !isLoadingResend) {
+                        authViewModel.refreshOtp(email)
                     },
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = if (isLoadingResend) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onBackground,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -139,8 +201,14 @@ fun VerifyOtpContent(
                     text = "Verify email address",
                     textColor = MaterialTheme.colorScheme.onSecondary,
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
+                    loading = verifyOtpState is RequestState.Loading,
                     onClick = {
-                        navController.navigate(AuthScreen.ChangePassword.route)
+                        if (otp.length == 5) {
+                            authViewModel.verifyOtp(email, otp)
+                        } else {
+                            // Could show error
+                            return@AppButton
+                        }
                     }
                 )
             }

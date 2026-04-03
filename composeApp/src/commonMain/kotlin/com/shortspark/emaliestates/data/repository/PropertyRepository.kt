@@ -1,3 +1,5 @@
+package com.shortspark.emaliestates.data.repository
+
 import com.shortspark.emaliestates.data.local.LocalDatabase
 import com.shortspark.emaliestates.domain.Property
 import kotlinx.coroutines.Dispatchers
