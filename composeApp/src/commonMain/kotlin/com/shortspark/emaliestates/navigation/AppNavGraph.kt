@@ -17,8 +17,6 @@ import com.shortspark.emaliestates.auth.presentation.SigninScreen
 import com.shortspark.emaliestates.auth.presentation.Signup2Screen
 import com.shortspark.emaliestates.auth.presentation.SignupScreen
 import com.shortspark.emaliestates.auth.presentation.VerifyOtpScreen
-import com.shortspark.emaliestates.home.presentation.HomeScreen
-import com.shortspark.emaliestates.home.presentation.MainScreen
 import com.shortspark.emaliestates.home.presentation.MainScreen1
 import com.shortspark.emaliestates.property.presentation.PropertyDetailScreen
 
@@ -78,7 +76,7 @@ fun AppNavGraph(
             }
 
             composable(BaseScreen.Profile.route) {
-                HomeScreen()
+                Text("Profile Screen")
             }
 
             composable(BaseScreen.Search.route) {
