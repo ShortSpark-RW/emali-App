@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.shortspark.emaliestates.domain.Countries
+import com.shortspark.emaliestates.navigation.AuthScreen
 import com.shortspark.emaliestates.navigation.BaseScreen
 import com.shortspark.emaliestates.util.components.auth.Gender
 import com.shortspark.emaliestates.util.components.auth.GenderAndDobRow
@@ -41,34 +43,60 @@ import emaliestates.composeapp.generated.resources.email_icon
 import emaliestates.composeapp.generated.resources.full_name
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import com.shortspark.emaliestates.auth.viewModel.SignupViewModel
+import com.shortspark.emaliestates.navigation.Graph
+import org.koin.compose.viewmodel.koinViewModel
+import com.shortspark.emaliestates.util.components.common.AnimatedMessage
+import com.shortspark.emaliestates.util.components.common.MessageType
+import com.shortspark.emaliestates.domain.RequestState
+// AuthScreen already imported above
 
 
 @Composable
 fun Signup2Screen(
     navController: NavController,
-//    viewModel: AuthViewModel = hiltViewModel()
 ) {
+    val parentEntry = remember(navController) { navController.getBackStackEntry(Graph.AUTHENTICATION) }
+    val viewModel: SignupViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
 
-    Signup2Content(navController)
+    Signup2Content(navController, viewModel)
 }
 
 @Composable
-@Preview(showBackground = true)
 fun Signup2Content(
     navController: NavController = rememberNavController(),
+    viewModel: SignupViewModel
 ) {
-    var fullname by remember { mutableStateOf("") }
+    // Form state from ViewModel
+    val fullName = viewModel.fullName
+    val phoneNumber = viewModel.phoneNumber
+    val selectedCountry = viewModel.selectedCountry
+    val gender = viewModel.gender
+    val day = viewModel.day
+    val month = viewModel.month
+    val year = viewModel.year
+
+    // Validation errors
+    val fullNameError = viewModel.fullNameError
+    val phoneError = viewModel.phoneError
+
+    // UI-only focus states
     var isFullnameFocused by remember { mutableStateOf(false) }
-    var phoneNumber by remember { mutableStateOf("") }
     var isPhoneNumberFocused by remember { mutableStateOf(false) }
-    var selectedCountry by remember { mutableStateOf(Countries[144]) }
-
-    var gender by remember { mutableStateOf(Gender.MALE) }
-    var day by remember { mutableStateOf(15) }
-    var month by remember { mutableStateOf(5) }
-    var year by remember { mutableStateOf(1994) }
 
 
+
+    val signupState = viewModel.signupState.value
+    val signupError = (signupState as? RequestState.Error)?.message
+    val isLoading = signupState.isLoading()
+
+    LaunchedEffect(signupState) {
+        if (signupState is RequestState.Success) {
+            // Store email in savedStateHandle for OTP verification
+            navController.currentBackStackEntry?.savedStateHandle?.set("email", viewModel.email)
+            navController.navigate(AuthScreen.VerifyOtp.route)
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -89,9 +117,21 @@ fun Signup2Content(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Global error message for signup API failures
+            if (signupError != null) {
+                AnimatedMessage(
+                    message = signupError,
+                    type = MessageType.ERROR,
+                    onDismiss = { viewModel.resetState() },
+                    animationStyle = com.shortspark.emaliestates.util.components.common.MessageAnimationStyle.SLIDE,
+                    showDismissButton = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             CommonOutlinedTextField(
-                value = fullname,
-                onValueChange = { fullname = it },
+                value = fullName,
+                onValueChange = { viewModel.updateFullName(it) },
                 isFocused = isFullnameFocused,
                 onFocusChange = { isFullnameFocused = it.isFocused },
                 label = "Full Name",
@@ -108,41 +148,60 @@ fun Signup2Content(
                     }
                 },
                 keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
+                imeAction = ImeAction.Next,
+                isError = fullNameError != null
             )
+            if (fullNameError != null) {
+                Text(
+                    text = fullNameError as String,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, top = 4.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             PhoneNumberOutlinedTextField(
                 phoneNumber = phoneNumber,
-                onPhoneNumberChange = { phoneNumber = it },
-
+                onPhoneNumberChange = { viewModel.updatePhoneNumber(it) },
                 selectedCountry = selectedCountry,
-
                 onCountrySelected = { newCountry ->
-                    selectedCountry = newCountry
+                    viewModel.updateSelectedCountry(newCountry)
                 },
-
                 isFocused = isPhoneNumberFocused,
                 onFocusChange = { isPhoneNumberFocused = it.isFocused },
-
+                isError = phoneError != null
             )
+            if (phoneError != null) {
+                Text(
+                    text = phoneError as String,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, top = 4.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             GenderAndDobRow(
                 gender = gender,
-                onGenderChange = { gender = it },
+                onGenderChange = { viewModel.updateGender(it) },
                 day = day,
                 month = month,
                 year = year,
-                onDayChange = { day = it },
-                onMonthChange = { month = it },
-                onYearChange = { year = it }
+                onDayChange = { viewModel.updateDateOfBirth(it, month, year) },
+                onMonthChange = { viewModel.updateDateOfBirth(day, it, year) },
+                onYearChange = { viewModel.updateDateOfBirth(day, month, it) }
             )
 
             Spacer(modifier = Modifier.height(6.dp))
 
+            val isLoading = signupState.isLoading()
             AppButton(
                 colors = ButtonColors(
                     containerColor = MaterialTheme.colorScheme.secondary,
@@ -150,11 +209,12 @@ fun Signup2Content(
                     disabledContainerColor = Color.Gray,
                     disabledContentColor = Color.White
                 ),
-                text = "Register",
+                text = if (isLoading) "Registering..." else "Register",
                 textColor = MaterialTheme.colorScheme.onSecondary,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
+                loading = isLoading,
                 onClick = {
-                    navController.navigate(BaseScreen.Home.route)
+                    viewModel.signup()
                 }
             )
         }

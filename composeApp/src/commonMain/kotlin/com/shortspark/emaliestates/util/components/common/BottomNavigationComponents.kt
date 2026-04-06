@@ -1,42 +1,33 @@
-package com.shortspark.emaliestates.home.presentation
+package com.shortspark.emaliestates.util.components.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.AddCircle
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Map
-import androidx.compose.material.icons.outlined.PlayCircle
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material3.Button
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
-import com.shortspark.emaliestates.data.repository.AuthRepository
-import com.shortspark.emaliestates.navigation.Graph
-import org.koin.compose.koinInject
 
 // ─── Bottom Nav Destinations ─────────────────────────────────────────────────
 
@@ -59,41 +50,17 @@ val bottomNavItems = listOf(
     BottomNavItem.Profile
 )
 
-// ─── MainScreen ───────────────────────────────────────────────────────────────
-
-@Composable
-fun MainScreen1(navController: NavController) {
-    var selectedRoute by remember { mutableStateOf(BottomNavItem.Home.route) }
-
-    Scaffold(
-        bottomBar = {
-            AppBottomNavigationBar(
-                selectedRoute = selectedRoute,
-                onItemSelected = { selectedRoute = it },
-                onAddClick = { /* open add property flow */ }
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding)) {
-            when (selectedRoute) {
-                BottomNavItem.Home.route -> HomeScreen1(navController = navController)
-                BottomNavItem.Map.route -> PlaceholderScreen("Map")
-                BottomNavItem.Tours.route -> PlaceholderScreen("eTours")
-                BottomNavItem.Profile.route -> PlaceholderScreen("Profile", navController = navController)
-            }
-        }
-    }
-}
-
 // ─── Bottom Navigation Bar ────────────────────────────────────────────────────
 
 @Composable
 fun AppBottomNavigationBar(
-    selectedRoute: String,
-    onItemSelected: (String) -> Unit,
+    navController: NavController,
+    items: List<BottomNavItem>,
     onAddClick: () -> Unit
 ) {
+    // Determine current selected item from back stack
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -110,11 +77,20 @@ fun AppBottomNavigationBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Left two items
-            bottomNavItems.take(2).forEach { item ->
+            items.take(2).forEach { item ->
                 BottomNavItemView(
                     item = item,
-                    isSelected = item.route == selectedRoute,
-                    onClick = { onItemSelected(item.route) }
+                    isSelected = item.route == currentRoute,
+                    onClick = {
+                        // Navigate to the selected route, avoiding duplicates
+                        navController.navigate(item.route) {
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                        }
+                    }
                 )
             }
 
@@ -122,11 +98,19 @@ fun AppBottomNavigationBar(
             AddFabButton(onClick = onAddClick)
 
             // Right two items
-            bottomNavItems.drop(2).forEach { item ->
+            items.drop(2).forEach { item ->
                 BottomNavItemView(
                     item = item,
-                    isSelected = item.route == selectedRoute,
-                    onClick = { onItemSelected(item.route) }
+                    isSelected = item.route == currentRoute,
+                    onClick = {
+                        navController.navigate(item.route) {
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                        }
+                    }
                 )
             }
         }
@@ -205,65 +189,5 @@ fun AddFabButton(onClick: () -> Unit) {
             fontWeight = FontWeight.Light,
             lineHeight = 28.sp
         )
-    }
-}
-
-// ─── Placeholder ─────────────────────────────────────────────────────────────
-
-@Composable
-fun PlaceholderScreen(
-    name: String,
-    navController: NavController? = null
-) {
-    val authRepository: AuthRepository = koinInject()
-    val authViewModel = koinInject<AuthViewModel>()
-
-    val rootNavController = rememberNavController()
-    val navBackStackEntry by rootNavController.currentBackStackEntryAsState()
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center
-    ) {
-        val token = authRepository.getToken()
-        Text(
-            text = "$name Screen",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        Button(
-            onClick = {
-                // 3. Perform Logout
-                authViewModel.logout()
-
-                // 4. Navigate back to Login Screen
-                navController?.navigate(Graph.AUTHENTICATION) {
-                    // Clear the backstack so they can't press "Back" to return here
-                    popUpTo(Graph.BASE) { inclusive = true }
-                }
-            },
-        ) {
-            Text("Sign Out")
-        }
-
-        if (token != null) {
-            Button(
-                onClick = {
-                    // 3. Perform Logout
-                    authViewModel.logout()
-
-                    // 4. Navigate back to Login Screen
-                    navController?.navigate(Graph.AUTHENTICATION) {
-                        // Clear the backstack so they can't press "Back" to return here
-                        popUpTo(Graph.BASE) { inclusive = true }
-                    }
-                },
-            ) {
-                Text("Sign Out")
-            }
-        }
     }
 }

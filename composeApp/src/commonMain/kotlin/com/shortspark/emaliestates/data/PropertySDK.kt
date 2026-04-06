@@ -10,8 +10,8 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.RedirectResponseException
 import io.ktor.client.plugins.ServerResponseException
-import kotlinx.datetime.Clock
-import  kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
 import kotlin.time.Duration.Companion.hours
@@ -162,5 +162,49 @@ class PropertySDK(
         }
 
         return difference >= 5.minutes
+    }
+
+    /**
+     * Search properties with various filters
+     */
+    suspend fun searchProperties(
+        query: String? = null,
+        propertyType: String? = null,
+        minPrice: Double? = null,
+        maxPrice: Double? = null,
+        minSurface: Double? = null,
+        maxSurface: Double? = null,
+        rooms: Int? = null,
+        bathrooms: Int? = null,
+        saleType: String? = null
+    ): RequestState<List<Property>> {
+        return try {
+            val apiResponse = api.searchProperties(
+                query = query,
+                propertyType = propertyType,
+                minPrice = minPrice,
+                maxPrice = maxPrice,
+                minSurface = minSurface,
+                maxSurface = maxSurface,
+                rooms = rooms,
+                bathrooms = bathrooms,
+                saleType = saleType
+            )
+            RequestState.Success(apiResponse.data ?: emptyList())
+        } catch (e: ClientRequestException) {
+            val errorBody = e.response.body<ApiErrorResponse>()
+            RequestState.Error(errorBody.error ?: errorBody.message)
+        } catch (e: ServerResponseException) {
+            val errorBody = e.response.body<ApiErrorResponse>()
+            RequestState.Error(errorBody.error ?: errorBody.message)
+        } catch (e: RedirectResponseException) {
+            RequestState.Error("Unexpected redirect: ${e.response.status.description}")
+        } catch (e: SerializationException) {
+            RequestState.Error("Failed to parse server response.")
+        } catch (e: IOException) {
+            RequestState.Error("No internet connection. Please check your network.")
+        } catch (e: Exception) {
+            RequestState.Error(e.message ?: "An unknown error occurred.")
+        }
     }
 }

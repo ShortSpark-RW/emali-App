@@ -1,13 +1,13 @@
 package com.shortspark.emaliestates
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.rememberNavController
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.shortspark.emaliestates.navigation.AppNavGraph
-import com.shortspark.emaliestates.navigation.Graph
 import com.shortspark.emaliestates.theme.EmaliEstatesTheme
 import com.shortspark.emaliestates.util.helpers.AppConstants
 import com.sunildhiman90.kmauth.core.KMAuthConfig
@@ -17,9 +17,10 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 @Preview
 fun App() {
-    KMAuthInitializer.initialize(
+    // Initialize KMAuth (config only - context is set in Android MainActivity)
+    val initialized = remember { KMAuthInitializer.initialize(
         KMAuthConfig.forGoogle(webClientId = AppConstants.WEB_CLIENT_ID)
-    )
+    ) }
 
 //    KMAuthInitializer.initialize(
 //        KMAuthConfig.forSupabase(
@@ -39,6 +40,6 @@ fun App() {
 
     EmaliEstatesTheme {
         val navController = rememberNavController()
-        AppNavGraph(navController = navController, startDestination = Graph.BASE)
+        AppNavGraph(navController = navController) // startDestination defaults to SPLASH
     }
 }

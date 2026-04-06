@@ -1,0 +1,12 @@
+-- Migration from version 2 to 3
+-- Fix AuthToken schema: ensure it matches the current definition without userId
+-- This will clear existing tokens, forcing user to re-login (acceptable)
+
+DROP TABLE IF EXISTS AuthToken;
+
+CREATE TABLE AuthToken (
+    id INTEGER NOT NULL PRIMARY KEY,
+    accessToken TEXT NOT NULL,
+    refreshToken TEXT NOT NULL,
+    expiresAt TEXT NOT NULL
+);

@@ -47,6 +47,8 @@ import com.shortspark.emaliestates.util.components.auth.LogoSection
 import com.shortspark.emaliestates.util.components.auth.OrDivider
 import com.shortspark.emaliestates.util.components.auth.PasswordOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.SocialAuthButtons
+import com.shortspark.emaliestates.util.components.common.AnimatedMessage
+import com.shortspark.emaliestates.util.components.common.MessageType
 import com.shortspark.emaliestates.util.components.common.AppButton
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -82,10 +84,11 @@ fun SigninScreen(
     navController: NavController,
 ) {
     val authViewModel = koinViewModel<AuthViewModel>()
-    val loginState by authViewModel.loginState.collectAsState()
+    val authState by authViewModel.authState.collectAsState()
 
-    LaunchedEffect(loginState) {
-        if (loginState is RequestState.Success) {
+    // Navigate to home when user becomes authenticated (after login OR Google sign-in)
+    LaunchedEffect(authState.currentUser) {
+        if (authState.currentUser != null) {
             navController.navigate(Graph.BASE) {
                 popUpTo(Graph.AUTHENTICATION) { inclusive = true }
             }
@@ -93,9 +96,13 @@ fun SigninScreen(
     }
 
     SigninContent(
-        loginState = loginState,
+        isLoading = authState.isLoading && authState.operation == com.shortspark.emaliestates.auth.viewModel.AuthOperation.Login,
+        errorMessage = authState.errorMessage,
         onLogin = { email, password ->
             authViewModel.login(email, password)
+        },
+        onClearError = {
+            authViewModel.clearError()
         },
         onSignup = {
             navController.navigate(AuthScreen.SignUp.route)
@@ -109,8 +116,10 @@ fun SigninScreen(
 @Composable
 @Preview(showBackground = true)
 fun SigninContent(
-    loginState: RequestState<*> = RequestState.Idle,
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
     onLogin: (String, String) -> Unit = { _, _ -> },
+    onClearError: () -> Unit = {},
     onForgotPassword: () -> Unit = {},
     onSignup: () -> Unit = {}
 ) {
@@ -135,18 +144,16 @@ fun SigninContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            /* ---------- API Error ---------- */
-            if (loginState is RequestState.Error) {
-                println(loginState.message)
-                Text(
-                    text = loginState.message.toString(),
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
+            /* ---------- API Error / Success Messages ---------- */
+            if (errorMessage != null) {
+                AnimatedMessage(
+                    message = errorMessage,
+                    type = MessageType.ERROR,
+                    onAutoDismiss = onClearError
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(if (errorMessage != null) 12.dp else 16.dp))
 
             /* ---------- Email ---------- */
             EmailOutlinedTextField(
@@ -221,10 +228,17 @@ fun SigninContent(
                 text = "Sign In",
                 modifier = Modifier.fillMaxWidth(),
                 textColor = MaterialTheme.colorScheme.onSecondary,
-                loading = loginState is RequestState.Loading,
+                loading = isLoading,
                 onClick = {
-
-                    onLogin(state.email, state.password)
+                    // Validate inputs before login
+                    val emailError = validateEmail(state.email)
+                    val passwordError = validatePassword(state.password)
+                    if (emailError == null && passwordError == null) {
+                        onLogin(state.email, state.password)
+                    } else {
+                        // Update state with errors
+                        state = state.copy(emailError = emailError, passwordError = passwordError)
+                    }
                 },
             )
 

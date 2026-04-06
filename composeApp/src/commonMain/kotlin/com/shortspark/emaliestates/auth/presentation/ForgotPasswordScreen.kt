@@ -131,6 +131,7 @@ fun ForgotPasswordContent(
                     textColor = MaterialTheme.colorScheme.onSecondary,
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
                     onClick = {
+                        navController.currentBackStackEntry?.savedStateHandle?.set("email", email)
                         navController.navigate(AuthScreen.VerifyOtp.route)
                     }
                 )
