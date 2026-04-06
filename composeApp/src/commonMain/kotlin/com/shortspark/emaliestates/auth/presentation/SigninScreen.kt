@@ -147,9 +147,8 @@ fun SigninContent(
             /* ---------- API Error / Success Messages ---------- */
             if (errorMessage != null) {
                 AnimatedMessage(
-                    message = errorMessage ?: "",
+                    message = errorMessage,
                     type = MessageType.ERROR,
-                    isVisible = errorMessage != null,
                     onAutoDismiss = onClearError
                 )
             }

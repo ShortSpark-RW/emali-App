@@ -122,7 +122,6 @@ fun Signup2Content(
                 AnimatedMessage(
                     message = signupError,
                     type = MessageType.ERROR,
-                    isVisible = signupError != null,
                     onDismiss = { viewModel.resetState() },
                     animationStyle = com.shortspark.emaliestates.util.components.common.MessageAnimationStyle.SLIDE,
                     showDismissButton = true

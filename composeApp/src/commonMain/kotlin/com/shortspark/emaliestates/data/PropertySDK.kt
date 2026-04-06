@@ -10,8 +10,8 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.RedirectResponseException
 import io.ktor.client.plugins.ServerResponseException
-import kotlinx.datetime.Clock
-import  kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
 import kotlin.time.Duration.Companion.hours
