@@ -41,33 +41,46 @@ import com.shortspark.emaliestates.util.components.auth.OrDivider
 import com.shortspark.emaliestates.util.components.auth.PasswordOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.SocialAuthButtons
 import com.shortspark.emaliestates.util.components.common.AppButton
+import com.shortspark.emaliestates.auth.viewModel.SignupViewModel
+import com.shortspark.emaliestates.navigation.Graph
+import androidx.lifecycle.viewmodel.compose.viewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
 
 
 @Composable
 fun SignupScreen(
     navController: NavController,
-//    viewModel: AuthViewModel = hiltViewModel()
 ) {
+    val parentEntry = remember(navController) { navController.getBackStackEntry(Graph.AUTHENTICATION) }
+    val viewModel: SignupViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
 
-    SignupContent(navController)
+    SignupContent(navController, viewModel)
 }
 
 @Composable
-@Preview(showBackground = true)
 fun SignupContent(
     navController: NavController = rememberNavController(),
+    viewModel: SignupViewModel
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isChecked by remember { mutableStateOf(false) }
-    var passwordVisibility by remember { mutableStateOf(false) }
+    // Use ViewModel state
+    val email = viewModel.email
+    val password = viewModel.password
+    val confirmPassword = viewModel.confirmPassword
+    val termsAccepted = viewModel.termsAccepted
+    val passwordVisibility = remember { mutableStateOf(false) }
+    val confirmPasswordVisibility = remember { mutableStateOf(false) }
+
+    // Validation errors from ViewModel
+    val emailError = viewModel.emailError
+    val passwordError = viewModel.passwordError
+    val confirmPasswordError = viewModel.confirmPasswordError
+    val termsError = viewModel.termsError
+
+    // UI-only focus states
     var isEmailFocused by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
     var isConfirmPasswordFocused by remember { mutableStateOf(false) }
-    var confirmPassword by remember { mutableStateOf("") }
-    var confirmPasswordVisibility by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -90,88 +103,101 @@ fun SignupContent(
 
             EmailOutlinedTextField(
                 email = email,
-                onEmailChange = { email = it },
+                onEmailChange = { viewModel.updateEmail(it) },
                 isEmailFocused = isEmailFocused,
                 onFocusChange = { isEmailFocused = it.isFocused },
-                imeAction = ImeAction.Next
+                imeAction = ImeAction.Next,
+                isError = emailError != null,
+                errorMessage = emailError ?: ""
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             PasswordOutlinedTextField(
                 value = password,
-                onValueChange = {
-                    password = it
-                    errorMessage = ""
-                },
+                onValueChange = { viewModel.updatePassword(it) },
                 label = "Password",
                 modifier = Modifier.fillMaxWidth(),
-                passwordVisibility = passwordVisibility,
-                onVisibilityChange = { passwordVisibility = it },
+                passwordVisibility = passwordVisibility.value,
+                onVisibilityChange = { passwordVisibility.value = it },
                 isPasswordFocused = isPasswordFocused,
                 imeAction = ImeAction.Next,
-                onFocusChange = { isPasswordFocused = it.isFocused }
+                onFocusChange = { isPasswordFocused = it.isFocused },
+                isError = passwordError != null,
+                errorMessage = passwordError ?: ""
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             PasswordOutlinedTextField(
                 value = confirmPassword,
-                onValueChange = {
-                    confirmPassword = it
-                    errorMessage = ""
-                },
+                onValueChange = { viewModel.updateConfirmPassword(it) },
                 label = "Confirm Password",
                 placeholder = "Confirm your password",
                 modifier = Modifier.fillMaxWidth(),
-                passwordVisibility = confirmPasswordVisibility,
-                onVisibilityChange = { confirmPasswordVisibility = it },
+                passwordVisibility = confirmPasswordVisibility.value,
+                onVisibilityChange = { confirmPasswordVisibility.value = it },
                 isPasswordFocused = isConfirmPasswordFocused,
                 imeAction = ImeAction.Done,
-                onFocusChange = { isConfirmPasswordFocused = it.isFocused }
+                onFocusChange = { isConfirmPasswordFocused = it.isFocused },
+                isError = confirmPasswordError != null,
+                errorMessage = confirmPasswordError ?: ""
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(), // Optional padding
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Checkbox(
-                        modifier = Modifier.padding(end = 2.dp),
-                        checked = isChecked,
-                        onCheckedChange = {
-                            isChecked = !isChecked
-                        },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = MaterialTheme.colorScheme.secondary,
-                            uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            checkmarkColor = MaterialTheme.colorScheme.primary,
-                            disabledUncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            disabledCheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            disabledIndeterminateColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        ),
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Checkbox(
+                            modifier = Modifier.padding(end = 2.dp),
+                            checked = termsAccepted,
+                            onCheckedChange = {
+                                viewModel.updateTermsAccepted(it)
+                            },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.secondary,
+                                uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                checkmarkColor = MaterialTheme.colorScheme.primary,
+                                disabledUncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                disabledCheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                disabledIndeterminateColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            ),
+                        )
+                        Text(
+                            text = "I accept the terms and conditions",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                     Text(
-                        text = "Remember me",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Forgot Password?",
+                        color = MaterialTheme.colorScheme.secondary,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.clickable {
+                            navController.navigate(AuthScreen.ForgotPassword.route)
+                        }
                     )
                 }
-                Text(
-                    text = "Forgot Password?",
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.clickable {
-                        navController.navigate(AuthScreen.ForgotPassword.route)
-                    }
-                )
+                if (termsError != null) {
+                    Text(
+                        text = termsError,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp, top = 4.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -187,7 +213,9 @@ fun SignupContent(
                 textColor = MaterialTheme.colorScheme.onSecondary,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
                 onClick = {
-                    navController.navigate(AuthScreen.SignUp2.route)
+                    if (viewModel.validateStep1()) {
+                        navController.navigate(AuthScreen.SignUp2.route)
+                    }
                 }
             )
 

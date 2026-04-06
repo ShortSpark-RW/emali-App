@@ -7,7 +7,7 @@ object LightAppColors {
     val PrimaryVariant = Color(0xFFC8C3C7)
     val Secondary = Color(0xFFFF7A00)
     val SecondaryVariant = Color(0xFFE66E00)
-    val Background = Color(0xFFFFFBF5)
+    val Background = Color(0xFFEFE5D4)
     val Surface = Color(0xFFFFFFFF)
     val Error = Color(0xFFB00020)
     val OnPrimary = Color(0xFF3C4043)

@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -28,6 +30,8 @@ import androidx.compose.ui.unit.sp
 import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
 import com.shortspark.emaliestates.auth.viewModel.FacebookAuthViewModel
 import com.shortspark.emaliestates.domain.RequestState
+import com.shortspark.emaliestates.util.components.common.AnimatedMessage
+import com.shortspark.emaliestates.util.components.common.MessageType
 import com.sunildhiman90.kmauth.supabase.KMAuthSupabase
 import emaliestates.composeapp.generated.resources.Res
 import emaliestates.composeapp.generated.resources.facebook
@@ -39,15 +43,27 @@ import org.koin.compose.viewmodel.koinViewModel
 fun SocialAuthButtons(
     modifier: Modifier = Modifier,
 ) {
-    // Inject the unified AuthViewModel
     val authViewModel = koinViewModel<AuthViewModel>()
+    val authState by authViewModel.authState.collectAsState()
 
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        GoogleSignInButton(authViewModel)
+        // Show error message if any
+        AnimatedMessage(
+            message = authState.errorMessage ?: "",
+            type = MessageType.ERROR,
+            isVisible = authState.errorMessage != null,
+            onAutoDismiss = { authViewModel.clearError() }
+        )
+
+        GoogleSignInButton(
+            authViewModel = authViewModel,
+            isLoggedIn = authState.currentUser != null,
+            isLoading = authState.isLoading && authState.operation == com.shortspark.emaliestates.auth.viewModel.AuthOperation.GoogleSignIn
+        )
         // FacebookSignInButton()
     }
 }
@@ -55,12 +71,10 @@ fun SocialAuthButtons(
 @Composable
 fun GoogleSignInButton(
     authViewModel: AuthViewModel,
+    isLoggedIn: Boolean,
+    isLoading: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val state by authViewModel.loginState.collectAsState()
-
-    // Helper to determine if we are logged in
-    val isLoggedIn = state is RequestState.Success
 
     OutlinedButton(
         onClick = {
@@ -81,20 +95,25 @@ fun GoogleSignInButton(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 2.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (isLoggedIn) {
-                // Get user name safely
-                val user = (state as RequestState.Success).data
-                Text(
-                    text = "Sign out, ${user.username}", // Access the property from your User domain object
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                )
-            } else {
+        if (isLoading) {
+            // Show loading indicator
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                strokeWidth = 2.dp
+            )
+        } else if (isLoggedIn) {
+            Text(
+                text = "Sign out",
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
                 Icon(
                     painter = painterResource(Res.drawable.google),
                     contentDescription = "Google Icon",
