@@ -7,13 +7,18 @@ CREATE TABLE Location (
     userId TEXT UNIQUE,
     createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Denormalized property data for when this location is for a property
+    propertyTitle TEXT,
+    propertyPrice REAL,
+    propertyType TEXT,
+    propertySaleType TEXT,
     FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE,
     FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE
 );
 
 insertLocation:
-INSERT INTO Location (id, latitude, longitude, address, propertyId, userId, createdAt, updatedAt)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO Location (id, latitude, longitude, address, propertyId, userId, propertyTitle, propertyPrice, propertyType, propertySaleType, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 readAllLocations:
 SELECT * FROM Location;

@@ -6,6 +6,12 @@ CREATE TABLE Share (
     recipientId TEXT,
     parentShareId TEXT,
     createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Denormalized property data
+    propertyTitle TEXT NOT NULL,
+    propertyPrice REAL NOT NULL,
+    propertyImage TEXT,
+    propertyType TEXT NOT NULL,
+    propertyPlaceName TEXT,
     FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE,
     FOREIGN KEY(senderId) REFERENCES User(id) ON DELETE CASCADE,
     FOREIGN KEY(recipientId) REFERENCES User(id) ON DELETE SET NULL,
@@ -13,7 +19,8 @@ CREATE TABLE Share (
 );
 
 insertShare:
-INSERT INTO Share (id, status, propertyId, senderId, recipientId, parentShareId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO Share (id, status, propertyId, senderId, recipientId, parentShareId, createdAt, propertyTitle, propertyPrice, propertyImage, propertyType, propertyPlaceName)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 readAllShares:
 SELECT * FROM Share;

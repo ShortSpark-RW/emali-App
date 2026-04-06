@@ -24,12 +24,16 @@ CREATE TABLE User (
     language TEXT,
     createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Denormalized location data from Location table
+    latitude REAL,
+    longitude REAL,
+    locationAddress TEXT,
     FOREIGN KEY(locationId) REFERENCES Location(id) ON DELETE SET NULL
 );
 
 insertUser:
-INSERT INTO User (id, email, phone, name, password, role, locationId, userId, username, gender, dob, address, country, province, district, profileImg, coverImg, googleId, whatsapp, isVerified, isActive, lastLogin, language, createdAt, updatedAt)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO User (id, email, phone, name, password, role, locationId, userId, username, gender, dob, address, country, province, district, profileImg, coverImg, googleId, whatsapp, isVerified, isActive, lastLogin, language, latitude, longitude, locationAddress, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 readAllUsers:
 SELECT * FROM User;

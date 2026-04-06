@@ -10,13 +10,18 @@ CREATE TABLE `Transaction` (
     idempotencyKey TEXT UNIQUE,
     metadata TEXT,
     timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Denormalized property data
+    propertyTitle TEXT NOT NULL,
+    propertyPrice REAL NOT NULL,
+    propertyType TEXT NOT NULL,
+    propertyPlaceName TEXT,
     FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE,
     FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE
 );
 
 insertTransaction:
-INSERT INTO `Transaction` (id, userId, propertyId, amount, method, currency, status, providerRef, idempotencyKey, metadata, timestamp)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO `Transaction` (id, userId, propertyId, amount, method, currency, status, providerRef, idempotencyKey, metadata, timestamp, propertyTitle, propertyPrice, propertyType, propertyPlaceName)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 readAllTransactions:
 SELECT * FROM `Transaction`;

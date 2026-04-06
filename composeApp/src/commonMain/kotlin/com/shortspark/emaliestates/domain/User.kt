@@ -30,6 +30,10 @@ data class User(
     val isActive: Boolean = true,
     val lastLogin: Instant? = null,
     val language: Language? = null,
+    // Denormalized location coordinates
+    val latitude: Float? = null,
+    val longitude: Float? = null,
+    val locationAddress: String? = null,
     val createdAt: Instant,
     val updatedAt: Instant
 )

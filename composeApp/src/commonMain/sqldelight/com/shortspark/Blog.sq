@@ -9,14 +9,19 @@ CREATE TABLE Blog (
     slug TEXT UNIQUE,
     createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Denormalized property data
+    propertyTitle TEXT,
+    propertyPrice REAL,
+    propertyType TEXT,
+    propertyPlaceName TEXT,
     FOREIGN KEY(authorId) REFERENCES User(id) ON DELETE CASCADE,
     FOREIGN KEY(categoryId) REFERENCES Category(id) ON DELETE SET NULL,
     FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE SET NULL
 );
 
 insertBlog:
-INSERT INTO Blog (id, title, content, authorId, categoryId, propertyId, featuredImg, slug, createdAt, updatedAt)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO Blog (id, title, content, authorId, categoryId, propertyId, featuredImg, slug, createdAt, updatedAt, propertyTitle, propertyPrice, propertyType, propertyPlaceName)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 readAllBlogs:
 SELECT * FROM Blog;

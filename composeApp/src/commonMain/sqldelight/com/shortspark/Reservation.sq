@@ -7,13 +7,20 @@ CREATE TABLE Reservation (
     reservedAt TEXT NOT NULL,
     expiresAt TEXT NOT NULL,
     createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Denormalized property data
+    propertyTitle TEXT NOT NULL,
+    propertyPrice REAL NOT NULL,
+    propertyImage TEXT,
+    propertyType TEXT NOT NULL,
+    propertyPlaceName TEXT,
     FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE,
     FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE,
     FOREIGN KEY(shareId) REFERENCES Share(id) ON DELETE SET NULL
 );
 
 insertReservation:
-INSERT INTO Reservation (id, userId, propertyId, shareId, status, reservedAt, expiresAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO Reservation (id, userId, propertyId, shareId, status, reservedAt, expiresAt, createdAt, propertyTitle, propertyPrice, propertyImage, propertyType, propertyPlaceName)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 readAllReservations:
 SELECT * FROM Reservation;

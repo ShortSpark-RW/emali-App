@@ -4,13 +4,21 @@ CREATE TABLE Favorite (
     propertyId TEXT NOT NULL,
     createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Denormalized property data for quick display without joins
+    propertyTitle TEXT NOT NULL,
+    propertyPrice REAL NOT NULL,
+    propertyImage TEXT,
+    propertyType TEXT NOT NULL,
+    propertySaleType TEXT NOT NULL,
+    propertyPlaceName TEXT,
     FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE,
     FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE,
     UNIQUE(userId, propertyId)
 );
 
 insertFavorite:
-INSERT INTO Favorite (id, userId, propertyId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?);
+INSERT INTO Favorite (id, userId, propertyId, propertyTitle, propertyPrice, propertyImage, propertyType, propertySaleType, propertyPlaceName, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 readAllFavorites:
 SELECT * FROM Favorite;
