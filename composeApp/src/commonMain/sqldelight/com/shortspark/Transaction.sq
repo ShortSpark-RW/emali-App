@@ -1,0 +1,37 @@
+CREATE TABLE `Transaction` (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    propertyId TEXT NOT NULL,
+    amount REAL NOT NULL,
+    method TEXT NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'RWF',
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    providerRef TEXT,
+    idempotencyKey TEXT UNIQUE,
+    metadata TEXT,
+    timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE
+);
+
+insertTransaction:
+INSERT INTO `Transaction` (id, userId, propertyId, amount, method, currency, status, providerRef, idempotencyKey, metadata, timestamp)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+readAllTransactions:
+SELECT * FROM `Transaction`;
+
+getTransactionById:
+SELECT * FROM `Transaction` WHERE id = ?;
+
+getTransactionsByUserId:
+SELECT * FROM `Transaction` WHERE userId = ?;
+
+getTransactionsByPropertyId:
+SELECT * FROM `Transaction` WHERE propertyId = ?;
+
+updateTransaction:
+UPDATE `Transaction` SET status = ?, providerRef = ?, metadata = ?, timestamp = ? WHERE id = ?;
+
+deleteTransaction:
+DELETE FROM `Transaction` WHERE id = ?;

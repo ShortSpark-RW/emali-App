@@ -1,0 +1,21 @@
+CREATE TABLE Province (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+insertProvince:
+INSERT INTO Province (id, name, createdAt, updatedAt) VALUES (?, ?, ?, ?);
+
+readAllProvinces:
+SELECT * FROM Province;
+
+getProvinceById:
+SELECT * FROM Province WHERE id = ?;
+
+updateProvince:
+UPDATE Province SET name = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?;
+
+deleteProvince:
+DELETE FROM Province WHERE id = ?;

@@ -1,0 +1,26 @@
+CREATE TABLE Faq (
+    id TEXT NOT NULL PRIMARY KEY,
+    question TEXT NOT NULL,
+    answer TEXT,
+    subject TEXT NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+insertFaq:
+INSERT INTO Faq (id, question, answer, subject, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?);
+
+readAllFaqs:
+SELECT * FROM Faq;
+
+getFaqById:
+SELECT * FROM Faq WHERE id = ?;
+
+getFaqsBySubject:
+SELECT * FROM Faq WHERE subject = ?;
+
+updateFaq:
+UPDATE Faq SET question = ?, answer = ?, subject = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?;
+
+deleteFaq:
+DELETE FROM Faq WHERE id = ?;

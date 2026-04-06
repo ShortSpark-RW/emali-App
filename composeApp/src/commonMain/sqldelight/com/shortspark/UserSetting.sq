@@ -1,0 +1,25 @@
+CREATE TABLE UserSetting (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL UNIQUE,
+    notificationsOn INTEGER NOT NULL DEFAULT 1,
+    smsEnabled INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE
+);
+
+insertUserSetting:
+INSERT INTO UserSetting (id, userId, notificationsOn, smsEnabled) VALUES (?, ?, ?, ?);
+
+readAllUserSettings:
+SELECT * FROM UserSetting;
+
+getUserSettingById:
+SELECT * FROM UserSetting WHERE id = ?;
+
+getUserSettingByUserId:
+SELECT * FROM UserSetting WHERE userId = ?;
+
+updateUserSetting:
+UPDATE UserSetting SET notificationsOn = ?, smsEnabled = ? WHERE id = ?;
+
+deleteUserSetting:
+DELETE FROM UserSetting WHERE id = ?;

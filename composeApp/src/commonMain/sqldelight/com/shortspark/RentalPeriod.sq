@@ -1,0 +1,25 @@
+CREATE TABLE RentalPeriod (
+    id TEXT NOT NULL PRIMARY KEY,
+    period TEXT NOT NULL,
+    price REAL NOT NULL,
+    propertyId TEXT NOT NULL,
+    FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE
+);
+
+insertRentalPeriod:
+INSERT INTO RentalPeriod (id, period, price, propertyId) VALUES (?, ?, ?, ?);
+
+readAllRentalPeriods:
+SELECT * FROM RentalPeriod;
+
+getRentalPeriodById:
+SELECT * FROM RentalPeriod WHERE id = ?;
+
+getRentalPeriodsByPropertyId:
+SELECT * FROM RentalPeriod WHERE propertyId = ?;
+
+updateRentalPeriod:
+UPDATE RentalPeriod SET period = ?, price = ?, propertyId = ? WHERE id = ?;
+
+deleteRentalPeriod:
+DELETE FROM RentalPeriod WHERE id = ?;

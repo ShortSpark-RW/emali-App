@@ -6,14 +6,10 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalTime::class)
 @Serializable
-data class Category(
+data class District(
     val id: String,
     val name: String,
-    val details: String? = null,
-    val parentId: String? = null,
-    val sortOrder: Int = 0,
-    val isActive: Boolean = true,
+    val provinceId: String,
     val createdAt: Instant,
     val updatedAt: Instant
 )
-

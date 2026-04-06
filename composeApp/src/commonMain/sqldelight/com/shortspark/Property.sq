@@ -1,0 +1,93 @@
+CREATE TABLE Property (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    type TEXT NOT NULL,
+    saleType TEXT NOT NULL,
+    price REAL NOT NULL,
+    locationId TEXT UNIQUE,
+    isActive INTEGER NOT NULL DEFAULT 1,
+    isFurnished INTEGER NOT NULL DEFAULT 0,
+    furnishingType TEXT NOT NULL DEFAULT 'UNFURNISHED',
+    bedrooms INTEGER NOT NULL DEFAULT 0,
+    bathrooms INTEGER NOT NULL DEFAULT 0,
+    area REAL NOT NULL,
+    featuredImg TEXT,
+    additionalImgs TEXT,
+    videoUrl TEXT,
+    floorPlanUrl TEXT,
+    amenities TEXT,
+    utilities TEXT,
+    isVerified INTEGER NOT NULL DEFAULT 0,
+    isFeatured INTEGER NOT NULL DEFAULT 0,
+    isSold INTEGER NOT NULL DEFAULT 0,
+    isRented INTEGER NOT NULL DEFAULT 0,
+    isShared INTEGER NOT NULL DEFAULT 0,
+    isReserved INTEGER NOT NULL DEFAULT 0,
+    isArchived INTEGER NOT NULL DEFAULT 0,
+    archivedAt TEXT,
+    archivedReason TEXT,
+    archivedBy TEXT,
+    upi TEXT UNIQUE,
+    ownerId TEXT NOT NULL,
+    categoryId TEXT,
+    placeId TEXT,
+
+    -- Denormalized relationship fields (cached from related tables)
+    placeName TEXT,
+    categoryName TEXT,
+    ownerName TEXT,
+    ownerPhone TEXT,
+    ownerProfileImg TEXT,
+
+    -- Location fields (denormalized from Location table)
+    latitude REAL,
+    longitude REAL,
+    address TEXT,
+
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(ownerId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY(categoryId) REFERENCES Category(id) ON DELETE SET NULL,
+    FOREIGN KEY(placeId) REFERENCES Place(id) ON DELETE SET NULL
+);
+
+insertProperty:
+INSERT INTO Property (id, title, description, type, saleType, price, locationId, isActive, isFurnished, furnishingType, bedrooms, bathrooms, area, featuredImg, additionalImgs, videoUrl, floorPlanUrl, amenities, utilities, isVerified, isFeatured, isSold, isRented, isShared, isReserved, isArchived, archivedAt, archivedReason, archivedBy, upi, ownerId, categoryId, placeId, placeName, categoryName, ownerName, ownerPhone, ownerProfileImg, latitude, longitude, address, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+removeAllProperties:
+DELETE FROM Property;
+
+readAllProperties:
+SELECT * FROM Property;
+
+getPropertyById:
+SELECT * FROM Property WHERE id = ?;
+
+getPropertiesByOwnerId:
+SELECT * FROM Property WHERE ownerId = ?;
+
+getPropertiesByCategoryId:
+SELECT * FROM Property WHERE categoryId = ?;
+
+getPropertiesByPlaceId:
+SELECT * FROM Property WHERE placeId = ?;
+
+getFeaturedProperties:
+SELECT * FROM Property WHERE isFeatured = 1 AND isActive = 1;
+
+getActiveProperties:
+SELECT * FROM Property WHERE isActive = 1;
+
+updateProperty:
+UPDATE Property SET title = ?, description = ?, type = ?, saleType = ?, price = ?, locationId = ?, isActive = ?, isFurnished = ?, furnishingType = ?, bedrooms = ?, bathrooms = ?, area = ?, featuredImg = ?, additionalImgs = ?, videoUrl = ?, floorPlanUrl = ?, amenities = ?, utilities = ?, isVerified = ?, isFeatured = ?, isSold = ?, isRented = ?, isShared = ?, isReserved = ?, isArchived = ?, archivedAt = ?, archivedReason = ?, archivedBy = ?, upi = ?, ownerId = ?, categoryId = ?, placeId = ?, updatedAt = CURRENT_TIMESTAMP
+WHERE id = ?;
+
+deleteProperty:
+DELETE FROM Property WHERE id = ?;
+
+-- Indexes on foreign keys for better JOIN performance
+CREATE INDEX idx_property_ownerId ON Property(ownerId);
+CREATE INDEX idx_property_categoryId ON Property(categoryId);
+CREATE INDEX idx_property_placeId ON Property(placeId);

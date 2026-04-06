@@ -1,0 +1,27 @@
+CREATE TABLE Place (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    featuredImg TEXT,
+    sectorId TEXT NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(sectorId) REFERENCES Sector(id) ON DELETE CASCADE
+);
+
+insertPlace:
+INSERT INTO Place (id, name, featuredImg, sectorId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?);
+
+readAllPlaces:
+SELECT * FROM Place;
+
+getPlaceById:
+SELECT * FROM Place WHERE id = ?;
+
+getPlacesBySectorId:
+SELECT * FROM Place WHERE sectorId = ?;
+
+updatePlace:
+UPDATE Place SET name = ?, featuredImg = ?, sectorId = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?;
+
+deletePlace:
+DELETE FROM Place WHERE id = ?;

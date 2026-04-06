@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.shortspark.emaliestates.domain.Property
+import com.shortspark.emaliestates.domain.SaleType
 import com.shortspark.emaliestates.util.components.common.rememberDebouncedNavigator
 
 // ─── Hero Image Section ───────────────────────────────────────────────────────
@@ -616,7 +617,7 @@ fun PropertyCard(
                     .padding(horizontal = 8.dp, vertical = 3.dp)
             ) {
                 Text(
-                    text = property.type.replaceFirstChar { it.uppercase() },
+                    text = property.type.name.lowercase().replaceFirstChar { it.uppercase() },
                     color = Color.White,
                     fontSize = 11.sp
                 )
@@ -664,7 +665,7 @@ fun PropertyCard(
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
-                if (property.saleType.equals("rent", ignoreCase = true)) {
+                if (property.saleType == SaleType.RENT) {
                     Text(text = "/mo", color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp)
                 }
             }

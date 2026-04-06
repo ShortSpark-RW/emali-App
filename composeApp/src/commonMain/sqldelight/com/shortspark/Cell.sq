@@ -1,0 +1,26 @@
+CREATE TABLE Cell (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    sectorId TEXT NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(sectorId) REFERENCES Sector(id) ON DELETE CASCADE
+);
+
+insertCell:
+INSERT INTO Cell (id, name, sectorId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?);
+
+readAllCells:
+SELECT * FROM Cell;
+
+getCellById:
+SELECT * FROM Cell WHERE id = ?;
+
+getCellsBySectorId:
+SELECT * FROM Cell WHERE sectorId = ?;
+
+updateCell:
+UPDATE Cell SET name = ?, sectorId = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?;
+
+deleteCell:
+DELETE FROM Cell WHERE id = ?;

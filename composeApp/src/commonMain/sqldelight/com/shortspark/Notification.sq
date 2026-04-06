@@ -1,0 +1,39 @@
+CREATE TABLE Notification (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    isRead INTEGER NOT NULL DEFAULT 0,
+    type TEXT NOT NULL,
+    isSent INTEGER NOT NULL DEFAULT 0,
+    notificationData TEXT,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE
+);
+
+insertNotification:
+INSERT INTO Notification (id, userId, title, message, isRead, type, isSent, notificationData, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+readAllNotifications:
+SELECT * FROM Notification;
+
+getNotificationById:
+SELECT * FROM Notification WHERE id = ?;
+
+getNotificationsByUserId:
+SELECT * FROM Notification WHERE userId = ?;
+
+getUnreadNotificationsByUserId:
+SELECT * FROM Notification WHERE userId = ? AND isRead = 0;
+
+updateNotification:
+UPDATE Notification SET title = ?, message = ?, isRead = ?, type = ?, isSent = ?, notificationData = ?, updatedAt = CURRENT_TIMESTAMP
+WHERE id = ?;
+
+markNotificationAsRead:
+UPDATE Notification SET isRead = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?;
+
+deleteNotification:
+DELETE FROM Notification WHERE id = ?;

@@ -1,0 +1,37 @@
+CREATE TABLE Share (
+    id TEXT NOT NULL PRIMARY KEY,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    propertyId TEXT NOT NULL,
+    senderId TEXT NOT NULL,
+    recipientId TEXT,
+    parentShareId TEXT,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE,
+    FOREIGN KEY(senderId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY(recipientId) REFERENCES User(id) ON DELETE SET NULL,
+    FOREIGN KEY(parentShareId) REFERENCES Share(id) ON DELETE SET NULL
+);
+
+insertShare:
+INSERT INTO Share (id, status, propertyId, senderId, recipientId, parentShareId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+readAllShares:
+SELECT * FROM Share;
+
+getShareById:
+SELECT * FROM Share WHERE id = ?;
+
+getSharesByPropertyId:
+SELECT * FROM Share WHERE propertyId = ?;
+
+getSharesBySenderId:
+SELECT * FROM Share WHERE senderId = ?;
+
+getSharesByRecipientId:
+SELECT * FROM Share WHERE recipientId = ?;
+
+updateShare:
+UPDATE Share SET status = ?, recipientId = ?, parentShareId = ? WHERE id = ?;
+
+deleteShare:
+DELETE FROM Share WHERE id = ?;

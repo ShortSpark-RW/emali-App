@@ -673,7 +673,7 @@ private fun Property.toUiModel(): PropertyUiModel {
         else -> "$${(price / 1_000_000).toInt()}M"
     }
 
-    val locationName = locationId ?: "Unknown location"
+    val locationName = placeName ?: locationId ?: "Unknown location"
 
     return PropertyUiModel(
         id = id,
@@ -681,7 +681,7 @@ private fun Property.toUiModel(): PropertyUiModel {
         location = locationName,
         price = formattedPrice,
         rating = 0f, // TODO: Add rating to domain.Property
-        badge = type.ifBlank { "Property" },
+        badge = type.name,
         imageUrl = featuredImg,
         bedrooms = bedrooms,
         bathrooms = bathrooms,
@@ -699,7 +699,7 @@ private fun groupPropertiesByType(
         properties
     }
 
-    return filtered.groupBy { it.saleType.ifBlank { "other" } }
+    return filtered.groupBy { it.saleType.name }
 }
 
 private fun getSectionTitle(type: String): String = when (type.lowercase()) {

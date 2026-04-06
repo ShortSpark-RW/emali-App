@@ -1,0 +1,34 @@
+CREATE TABLE Favorite (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    propertyId TEXT NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE,
+    UNIQUE(userId, propertyId)
+);
+
+insertFavorite:
+INSERT INTO Favorite (id, userId, propertyId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?);
+
+readAllFavorites:
+SELECT * FROM Favorite;
+
+getFavoriteById:
+SELECT * FROM Favorite WHERE id = ?;
+
+getFavoritesByUserId:
+SELECT * FROM Favorite WHERE userId = ?;
+
+getFavoritesByPropertyId:
+SELECT * FROM Favorite WHERE propertyId = ?;
+
+getFavoriteByUserAndProperty:
+SELECT * FROM Favorite WHERE userId = ? AND propertyId = ?;
+
+updateFavorite:
+UPDATE Favorite SET userId = ?, propertyId = ? WHERE id = ?;
+
+deleteFavorite:
+DELETE FROM Favorite WHERE id = ?;

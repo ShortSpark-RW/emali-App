@@ -1,0 +1,48 @@
+CREATE TABLE User (
+    id TEXT NOT NULL PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    phone TEXT UNIQUE,
+    name TEXT NOT NULL,
+    password TEXT,
+    role TEXT NOT NULL DEFAULT 'CLIENT',
+    locationId TEXT UNIQUE,
+    userId TEXT UNIQUE,
+    username TEXT UNIQUE,
+    gender TEXT,
+    dob TEXT,
+    address TEXT,
+    country TEXT,
+    province TEXT,
+    district TEXT,
+    profileImg TEXT,
+    coverImg TEXT,
+    googleId TEXT UNIQUE,
+    whatsapp TEXT,
+    isVerified INTEGER NOT NULL DEFAULT 0,
+    isActive INTEGER NOT NULL DEFAULT 1,
+    lastLogin TEXT,
+    language TEXT,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(locationId) REFERENCES Location(id) ON DELETE SET NULL
+);
+
+insertUser:
+INSERT INTO User (id, email, phone, name, password, role, locationId, userId, username, gender, dob, address, country, province, district, profileImg, coverImg, googleId, whatsapp, isVerified, isActive, lastLogin, language, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+readAllUsers:
+SELECT * FROM User;
+
+getUserById:
+SELECT * FROM User WHERE id = ?;
+
+getUserByEmail:
+SELECT * FROM User WHERE email = ?;
+
+updateUser:
+UPDATE User SET email = ?, phone = ?, name = ?, password = ?, role = ?, locationId = ?, userId = ?, username = ?, gender = ?, dob = ?, address = ?, country = ?, province = ?, district = ?, profileImg = ?, coverImg = ?, googleId = ?, whatsapp = ?, isVerified = ?, isActive = ?, lastLogin = ?, language = ?, updatedAt = CURRENT_TIMESTAMP
+WHERE id = ?;
+
+deleteUser:
+DELETE FROM User WHERE id = ?;

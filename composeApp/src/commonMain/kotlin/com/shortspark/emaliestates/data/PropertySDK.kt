@@ -1,6 +1,6 @@
 package com.shortspark.emaliestates.data
 
-import PropertyRepository
+import com.shortspark.emaliestates.data.repository.PropertyRepository
 import com.russhwolf.settings.Settings
 import com.shortspark.emaliestates.data.remote.PropertyApi
 import com.shortspark.emaliestates.domain.ApiErrorResponse

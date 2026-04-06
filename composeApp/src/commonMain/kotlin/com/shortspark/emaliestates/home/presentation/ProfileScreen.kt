@@ -670,7 +670,7 @@ private fun PropertyGridCard(
                     .background(Color(0x88000000))
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
-                Text(post.type.ifBlank { "Property" }, color = Color.White, fontSize = 9.sp)
+                Text(post.type.name, color = Color.White, fontSize = 9.sp)
             }
 
             // Videos tab: more options at bottom right
@@ -721,7 +721,7 @@ private fun PropertyGridCard(
                 Icon(Icons.Default.LocationOn, null, tint = Orange(), modifier = Modifier.size(11.dp))
                 Spacer(Modifier.width(2.dp))
                 Text(
-                    text = post.locationId ?: "Unknown",
+                    text = post.placeName ?: post.locationId ?: "Unknown",
                     color = TextSecondary(),
                     fontSize = 10.sp,
                     maxLines = 1,

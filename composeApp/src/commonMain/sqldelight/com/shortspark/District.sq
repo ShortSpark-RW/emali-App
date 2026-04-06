@@ -1,0 +1,26 @@
+CREATE TABLE District (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    provinceId TEXT NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(provinceId) REFERENCES Province(id) ON DELETE CASCADE
+);
+
+insertDistrict:
+INSERT INTO District (id, name, provinceId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?);
+
+readAllDistricts:
+SELECT * FROM District;
+
+getDistrictById:
+SELECT * FROM District WHERE id = ?;
+
+getDistrictsByProvinceId:
+SELECT * FROM District WHERE provinceId = ?;
+
+updateDistrict:
+UPDATE District SET name = ?, provinceId = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?;
+
+deleteDistrict:
+DELETE FROM District WHERE id = ?;

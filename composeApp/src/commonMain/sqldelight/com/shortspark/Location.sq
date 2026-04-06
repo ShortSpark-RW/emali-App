@@ -1,0 +1,35 @@
+CREATE TABLE Location (
+    id TEXT NOT NULL PRIMARY KEY,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    address TEXT,
+    propertyId TEXT UNIQUE,
+    userId TEXT UNIQUE,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE,
+    FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE
+);
+
+insertLocation:
+INSERT INTO Location (id, latitude, longitude, address, propertyId, userId, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+readAllLocations:
+SELECT * FROM Location;
+
+getLocationById:
+SELECT * FROM Location WHERE id = ?;
+
+getLocationByPropertyId:
+SELECT * FROM Location WHERE propertyId = ?;
+
+getLocationByUserId:
+SELECT * FROM Location WHERE userId = ?;
+
+updateLocation:
+UPDATE Location SET latitude = ?, longitude = ?, address = ?, propertyId = ?, userId = ?, updatedAt = CURRENT_TIMESTAMP
+WHERE id = ?;
+
+deleteLocation:
+DELETE FROM Location WHERE id = ?;

@@ -1,6 +1,5 @@
 package com.shortspark.emaliestates.di
 
-import PropertyRepository
 import com.russhwolf.settings.Settings
 import com.shortspark.emaliestates.home.viewModel.MainViewModel
 import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
@@ -17,6 +16,7 @@ import com.shortspark.emaliestates.data.remote.HttpClientFactory
 import com.shortspark.emaliestates.data.remote.PropertyApi
 import com.shortspark.emaliestates.data.repository.AuthRepository
 import com.shortspark.emaliestates.data.repository.CategoryRepository
+import com.shortspark.emaliestates.data.repository.PropertyRepository
 import com.shortspark.emaliestates.property.viewModel.PropertyDetailViewModel
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
@@ -121,10 +121,11 @@ val sharedModule = module {
     // Category API - depends on HttpClient
     single<CategoryApi> { CategoryApi(get()) }
 
-    // Category Repository - depends on CategoryApi
+    // Category Repository - depends on CategoryApi and LocalDatabase
     single<CategoryRepository> {
         CategoryRepository(
-            categoryApi = get()
+            categoryApi = get(),
+            localDatabase = get()
         )
     }
 

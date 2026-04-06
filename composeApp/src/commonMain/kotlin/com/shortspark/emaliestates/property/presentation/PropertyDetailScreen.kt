@@ -134,10 +134,10 @@ fun PropertyDetailBody(
                 // ── Title + Price ─────────────────────────────────────────────
                 PropertyTitleRow(
                     title = property.title,
-                    location = property.locationId ?: "",
+                    location = property.placeName ?: property.locationId ?: "",
                     rating = 4.5f,
                     price = property.price,
-                    saleType = property.saleType
+                    saleType = property.saleType.name
                 )
 
                 PropertyDivider()

@@ -1,0 +1,26 @@
+CREATE TABLE Village (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    cellId TEXT NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(cellId) REFERENCES Cell(id) ON DELETE CASCADE
+);
+
+insertVillage:
+INSERT INTO Village (id, name, cellId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?);
+
+readAllVillages:
+SELECT * FROM Village;
+
+getVillageById:
+SELECT * FROM Village WHERE id = ?;
+
+getVillagesByCellId:
+SELECT * FROM Village WHERE cellId = ?;
+
+updateVillage:
+UPDATE Village SET name = ?, cellId = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?;
+
+deleteVillage:
+DELETE FROM Village WHERE id = ?;

@@ -199,10 +199,10 @@ private fun Property.toUiModel(): com.shortspark.emaliestates.home.presentation.
     return com.shortspark.emaliestates.home.presentation.PropertyUiModel(
         id = id,
         title = title,
-        location = locationId ?: "Unknown location",
+        location = placeName ?: locationId ?: "Unknown location",
         price = formatPrice(price),
         rating = 0f,
-        badge = type.ifBlank { "Property" },
+        badge = type.name,
         imageUrl = featuredImg,
         bedrooms = bedrooms,
         bathrooms = bathrooms,

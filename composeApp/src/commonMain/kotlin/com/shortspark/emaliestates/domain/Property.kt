@@ -10,14 +10,14 @@ data class Property(
     val id: String,
     val title: String,
     val description: String,
-    val type: String,
-    val saleType: String,
+    val type: PropertyType,
+    val saleType: SaleType,
     val price: Float,
 
     val locationId: String? = null,
     val isActive: Boolean = true,
     val isFurnished: Boolean = false,
-    val furnishingType: String? = null,
+    val furnishingType: FurnishingType = FurnishingType.UNFURNISHED,
 
     val bedrooms: Int = 0,
     val bathrooms: Int = 0,
@@ -48,8 +48,40 @@ data class Property(
     val categoryId: String? = null,
     val placeId: String? = null,
 
+    // Denormalized relationship fields
+    val placeName: String? = null,
+    val categoryName: String? = null,
+    val ownerName: String? = null,
+    val ownerPhone: String? = null,
+    val ownerProfileImg: String? = null,
+
+    // Location fields (denormalized from Location table)
+    val latitude: Float? = null,
+    val longitude: Float? = null,
+    val address: String? = null,
+
     val createdAt: Instant,
     val updatedAt: Instant
 )
+
+@Serializable
+enum class PropertyType {
+    HOUSE,
+    LAND
+}
+
+@Serializable
+enum class SaleType {
+    SALE,
+    RENT,
+    BOTH
+}
+
+@Serializable
+enum class FurnishingType {
+    FULLY_FURNISHED,
+    SEMI_FURNISHED,
+    UNFURNISHED
+}
 
 

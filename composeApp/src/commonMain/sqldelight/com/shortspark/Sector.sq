@@ -1,0 +1,26 @@
+CREATE TABLE Sector (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    districtId TEXT NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(districtId) REFERENCES District(id) ON DELETE CASCADE
+);
+
+insertSector:
+INSERT INTO Sector (id, name, districtId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?);
+
+readAllSectors:
+SELECT * FROM Sector;
+
+getSectorById:
+SELECT * FROM Sector WHERE id = ?;
+
+getSectorsByDistrictId:
+SELECT * FROM Sector WHERE districtId = ?;
+
+updateSector:
+UPDATE Sector SET name = ?, districtId = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?;
+
+deleteSector:
+DELETE FROM Sector WHERE id = ?;

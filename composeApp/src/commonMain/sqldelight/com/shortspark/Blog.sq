@@ -1,0 +1,41 @@
+CREATE TABLE Blog (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT,
+    content TEXT,
+    authorId TEXT NOT NULL,
+    categoryId TEXT,
+    propertyId TEXT,
+    featuredImg TEXT,
+    slug TEXT UNIQUE,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(authorId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY(categoryId) REFERENCES Category(id) ON DELETE SET NULL,
+    FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE SET NULL
+);
+
+insertBlog:
+INSERT INTO Blog (id, title, content, authorId, categoryId, propertyId, featuredImg, slug, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+readAllBlogs:
+SELECT * FROM Blog;
+
+getBlogById:
+SELECT * FROM Blog WHERE id = ?;
+
+getBlogsByAuthorId:
+SELECT * FROM Blog WHERE authorId = ?;
+
+getBlogsByCategoryId:
+SELECT * FROM Blog WHERE categoryId = ?;
+
+getBlogsByPropertyId:
+SELECT * FROM Blog WHERE propertyId = ?;
+
+updateBlog:
+UPDATE Blog SET title = ?, content = ?, authorId = ?, categoryId = ?, propertyId = ?, featuredImg = ?, slug = ?, updatedAt = CURRENT_TIMESTAMP
+WHERE id = ?;
+
+deleteBlog:
+DELETE FROM Blog WHERE id = ?;

@@ -1,0 +1,37 @@
+CREATE TABLE Reservation (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    propertyId TEXT NOT NULL,
+    shareId TEXT,
+    status TEXT NOT NULL,
+    reservedAt TEXT NOT NULL,
+    expiresAt TEXT NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY(propertyId) REFERENCES Property(id) ON DELETE CASCADE,
+    FOREIGN KEY(shareId) REFERENCES Share(id) ON DELETE SET NULL
+);
+
+insertReservation:
+INSERT INTO Reservation (id, userId, propertyId, shareId, status, reservedAt, expiresAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+readAllReservations:
+SELECT * FROM Reservation;
+
+getReservationById:
+SELECT * FROM Reservation WHERE id = ?;
+
+getReservationsByUserId:
+SELECT * FROM Reservation WHERE userId = ?;
+
+getReservationsByPropertyId:
+SELECT * FROM Reservation WHERE propertyId = ?;
+
+getReservationsByShareId:
+SELECT * FROM Reservation WHERE shareId = ?;
+
+updateReservation:
+UPDATE Reservation SET status = ?, reservedAt = ?, expiresAt = ? WHERE id = ?;
+
+deleteReservation:
+DELETE FROM Reservation WHERE id = ?;

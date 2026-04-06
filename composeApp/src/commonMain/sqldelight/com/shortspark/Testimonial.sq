@@ -1,0 +1,32 @@
+CREATE TABLE Testimonial (
+    id TEXT NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    occupation TEXT NOT NULL,
+    content TEXT NOT NULL,
+    starRating INTEGER NOT NULL,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE
+);
+
+insertTestimonial:
+INSERT INTO Testimonial (id, userId, occupation, content, starRating, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+readAllTestimonials:
+SELECT * FROM Testimonial;
+
+getTestimonialById:
+SELECT * FROM Testimonial WHERE id = ?;
+
+getTestimonialsByUserId:
+SELECT * FROM Testimonial WHERE userId = ?;
+
+getActiveTestimonials:
+SELECT * FROM Testimonial WHERE starRating >= 4;
+
+updateTestimonial:
+UPDATE Testimonial SET occupation = ?, content = ?, starRating = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?;
+
+deleteTestimonial:
+DELETE FROM Testimonial WHERE id = ?;

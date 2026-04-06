@@ -6,14 +6,15 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalTime::class)
 @Serializable
-data class Category(
+data class Notification(
     val id: String,
-    val name: String,
-    val details: String? = null,
-    val parentId: String? = null,
-    val sortOrder: Int = 0,
-    val isActive: Boolean = true,
+    val userId: String,
+    val title: String,
+    val message: String,
+    val isRead: Boolean = false,
+    val type: String,
+    val isSent: Boolean = false,
+    val notificationData: String? = null,
     val createdAt: Instant,
     val updatedAt: Instant
 )
-
