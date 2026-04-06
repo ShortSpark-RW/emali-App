@@ -1,0 +1,57 @@
+-- Migration from version 3 to 4
+-- Add denormalized columns to Property table for enhanced relationships
+-- This adds location coordinates, place name, category name, and owner info
+
+ALTER TABLE Property ADD COLUMN placeName TEXT;
+ALTER TABLE Property ADD COLUMN categoryName TEXT;
+ALTER TABLE Property ADD COLUMN ownerName TEXT;
+ALTER TABLE Property ADD COLUMN ownerPhone TEXT;
+ALTER TABLE Property ADD COLUMN ownerProfileImg TEXT;
+ALTER TABLE Property ADD COLUMN latitude REAL;
+ALTER TABLE Property ADD COLUMN longitude REAL;
+ALTER TABLE Property ADD COLUMN address TEXT;
+
+-- Add indexes on foreign keys for better query performance
+CREATE INDEX IF NOT EXISTS idx_property_ownerId ON Property(ownerId);
+CREATE INDEX IF NOT EXISTS idx_property_categoryId ON Property(categoryId);
+CREATE INDEX IF NOT EXISTS idx_property_placeId ON Property(placeId);
+
+-- Also add denormalized location fields to User table
+ALTER TABLE User ADD COLUMN latitude REAL;
+ALTER TABLE User ADD COLUMN longitude REAL;
+ALTER TABLE User ADD COLUMN locationAddress TEXT;
+
+-- Add denormalized property fields to related tables
+ALTER TABLE Favorite ADD COLUMN propertyTitle TEXT NOT NULL DEFAULT '';
+ALTER TABLE Favorite ADD COLUMN propertyPrice REAL DEFAULT 0;
+ALTER TABLE Favorite ADD COLUMN propertyImage TEXT;
+ALTER TABLE Favorite ADD COLUMN propertyType TEXT NOT NULL DEFAULT '';
+ALTER TABLE Favorite ADD COLUMN propertySaleType TEXT NOT NULL DEFAULT '';
+ALTER TABLE Favorite ADD COLUMN propertyPlaceName TEXT;
+
+ALTER TABLE Reservation ADD COLUMN propertyTitle TEXT NOT NULL DEFAULT '';
+ALTER TABLE Reservation ADD COLUMN propertyPrice REAL DEFAULT 0;
+ALTER TABLE Reservation ADD COLUMN propertyImage TEXT;
+ALTER TABLE Reservation ADD COLUMN propertyType TEXT NOT NULL DEFAULT '';
+ALTER TABLE Reservation ADD COLUMN propertyPlaceName TEXT;
+
+ALTER TABLE `Transaction` ADD COLUMN propertyTitle TEXT NOT NULL DEFAULT '';
+ALTER TABLE `Transaction` ADD COLUMN propertyPrice REAL DEFAULT 0;
+ALTER TABLE `Transaction` ADD COLUMN propertyType TEXT NOT NULL DEFAULT '';
+ALTER TABLE `Transaction` ADD COLUMN propertyPlaceName TEXT;
+
+ALTER TABLE Share ADD COLUMN propertyTitle TEXT NOT NULL DEFAULT '';
+ALTER TABLE Share ADD COLUMN propertyPrice REAL DEFAULT 0;
+ALTER TABLE Share ADD COLUMN propertyImage TEXT;
+ALTER TABLE Share ADD COLUMN propertyType TEXT NOT NULL DEFAULT '';
+ALTER TABLE Share ADD COLUMN propertyPlaceName TEXT;
+
+ALTER TABLE Blog ADD COLUMN propertyTitle TEXT;
+ALTER TABLE Blog ADD COLUMN propertyPrice REAL;
+ALTER TABLE Blog ADD COLUMN propertyType TEXT;
+ALTER TABLE Blog ADD COLUMN propertyPlaceName TEXT;
+
+ALTER TABLE Location ADD COLUMN propertyTitle TEXT;
+ALTER TABLE Location ADD COLUMN propertyPrice REAL;
+ALTER TABLE Location ADD COLUMN propertyType TEXT;
+ALTER TABLE Location ADD COLUMN propertySaleType TEXT;

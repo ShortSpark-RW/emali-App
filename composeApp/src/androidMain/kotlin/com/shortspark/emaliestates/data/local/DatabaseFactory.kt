@@ -10,9 +10,9 @@ class AndroidDatabaseDriverFactory(
 ): DatabaseDriverFactory {
     override fun createDriver(): SqlDriver {
         return AndroidSqliteDriver(
-            PropertyDatabase.Schema,
-            context,
-            "property.db"
+            schema = PropertyDatabase.Schema,
+            context = context,
+            name = "property.db"
         )
     }
 }
