@@ -12,14 +12,19 @@ import com.sunildhiman90.kmauth.core.KMAuthPlatformContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 1. Install Splash Screen MUST be called before super.onCreate()
+        installSplashScreen()
+        
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        installSplashScreen()
+
+        // 2. Initialize KMAuth context once outside setContent to avoid 
+        // unnecessary re-initialization during recompositions.
+        KMAuthInitializer.initContext(
+            kmAuthPlatformContext = KMAuthPlatformContext(this)
+        )
 
         setContent {
-            KMAuthInitializer.initContext(
-                kmAuthPlatformContext = KMAuthPlatformContext(this)
-            )
             App()
         }
     }

@@ -1,24 +1,23 @@
--- Schema version: 2
 CREATE TABLE Property (
     id TEXT NOT NULL PRIMARY KEY,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    type TEXT NOT NULL,
-    saleType TEXT NOT NULL,
+    type TEXT NOT NULL, -- HOUSE, LAND
+    saleType TEXT NOT NULL, -- SALE, RENT, BOTH
     price REAL NOT NULL,
     locationId TEXT UNIQUE,
     isActive INTEGER NOT NULL DEFAULT 1,
     isFurnished INTEGER NOT NULL DEFAULT 0,
-    furnishingType TEXT NOT NULL DEFAULT 'UNFURNISHED',
+    furnishingType TEXT NOT NULL DEFAULT 'UNFURNISHED', -- FULLY_FURNISHED, SEMI_FURNISHED, UNFURNISHED
     bedrooms INTEGER NOT NULL DEFAULT 0,
     bathrooms INTEGER NOT NULL DEFAULT 0,
     area REAL NOT NULL,
     featuredImg TEXT,
-    additionalImgs TEXT,
+    additionalImgs TEXT, -- JSON Array
     videoUrl TEXT,
     floorPlanUrl TEXT,
-    amenities TEXT,
-    utilities TEXT,
+    amenities TEXT, -- JSON Array
+    utilities TEXT, -- JSON Array
     isVerified INTEGER NOT NULL DEFAULT 0,
     isFeatured INTEGER NOT NULL DEFAULT 0,
     isSold INTEGER NOT NULL DEFAULT 0,
@@ -33,28 +32,35 @@ CREATE TABLE Property (
     ownerId TEXT NOT NULL,
     categoryId TEXT,
     placeId TEXT,
+    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    -- Denormalized relationship fields (cached from related tables)
-    placeName TEXT,
+    -- Cache for UI Performance
     categoryName TEXT,
+    placeName TEXT,
     ownerName TEXT,
     ownerPhone TEXT,
     ownerProfileImg TEXT,
-
-    -- Location fields (denormalized from Location table)
     latitude REAL,
     longitude REAL,
     address TEXT,
 
-    createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(ownerId) REFERENCES User(id) ON DELETE CASCADE,
     FOREIGN KEY(categoryId) REFERENCES Category(id) ON DELETE SET NULL,
-    FOREIGN KEY(placeId) REFERENCES Place(id) ON DELETE SET NULL
+    FOREIGN KEY(placeId) REFERENCES Place(id) ON DELETE SET NULL,
+    FOREIGN KEY(locationId) REFERENCES Location(id) ON DELETE SET NULL
 );
 
 insertProperty:
-INSERT INTO Property (id, title, description, type, saleType, price, locationId, isActive, isFurnished, furnishingType, bedrooms, bathrooms, area, featuredImg, additionalImgs, videoUrl, floorPlanUrl, amenities, utilities, isVerified, isFeatured, isSold, isRented, isShared, isReserved, isArchived, archivedAt, archivedReason, archivedBy, upi, ownerId, categoryId, placeId, placeName, categoryName, ownerName, ownerPhone, ownerProfileImg, latitude, longitude, address, createdAt, updatedAt)
+INSERT OR REPLACE INTO Property (
+    id, title, description, type, saleType, price, locationId, isActive,
+    isFurnished, furnishingType, bedrooms, bathrooms, area, featuredImg,
+    additionalImgs, videoUrl, floorPlanUrl, amenities, utilities,
+    isVerified, isFeatured, isSold, isRented, isShared, isReserved,
+    isArchived, archivedAt, archivedReason, archivedBy, upi, ownerId,
+    categoryId, placeId, categoryName, placeName, ownerName, ownerPhone,
+    ownerProfileImg, latitude, longitude, address, createdAt, updatedAt
+)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 removeAllProperties:
@@ -82,13 +88,20 @@ getActiveProperties:
 SELECT * FROM Property WHERE isActive = 1;
 
 updateProperty:
-UPDATE Property SET title = ?, description = ?, type = ?, saleType = ?, price = ?, locationId = ?, isActive = ?, isFurnished = ?, furnishingType = ?, bedrooms = ?, bathrooms = ?, area = ?, featuredImg = ?, additionalImgs = ?, videoUrl = ?, floorPlanUrl = ?, amenities = ?, utilities = ?, isVerified = ?, isFeatured = ?, isSold = ?, isRented = ?, isShared = ?, isReserved = ?, isArchived = ?, archivedAt = ?, archivedReason = ?, archivedBy = ?, upi = ?, ownerId = ?, categoryId = ?, placeId = ?, updatedAt = CURRENT_TIMESTAMP
+UPDATE Property SET
+    title = ?, description = ?, type = ?, saleType = ?, price = ?,
+    locationId = ?, isActive = ?, isFurnished = ?, furnishingType = ?,
+    bedrooms = ?, bathrooms = ?, area = ?, featuredImg = ?,
+    additionalImgs = ?, videoUrl = ?, floorPlanUrl = ?, amenities = ?,
+    utilities = ?, isVerified = ?, isFeatured = ?, isSold = ?,
+    isRented = ?, isShared = ?, isReserved = ?, isArchived = ?,
+    archivedAt = ?, archivedReason = ?, archivedBy = ?, upi = ?,
+    ownerId = ?, categoryId = ?, placeId = ?, updatedAt = CURRENT_TIMESTAMP
 WHERE id = ?;
 
 deleteProperty:
 DELETE FROM Property WHERE id = ?;
 
--- Indexes on foreign keys for better JOIN performance
-CREATE INDEX idx_property_ownerId ON Property(ownerId);
-CREATE INDEX idx_property_categoryId ON Property(categoryId);
-CREATE INDEX idx_property_placeId ON Property(placeId);
+CREATE INDEX IF NOT EXISTS idx_property_ownerId ON Property(ownerId);
+CREATE INDEX IF NOT EXISTS idx_property_categoryId ON Property(categoryId);
+CREATE INDEX IF NOT EXISTS idx_property_placeId ON Property(placeId);

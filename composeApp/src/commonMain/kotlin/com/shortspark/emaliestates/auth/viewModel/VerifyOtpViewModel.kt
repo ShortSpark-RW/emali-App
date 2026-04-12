@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.shortspark.emaliestates.auth.viewModel.AuthOperation
 import com.shortspark.emaliestates.data.AuthSDK
 import com.shortspark.emaliestates.domain.RequestState
 import com.shortspark.emaliestates.domain.auth.User
@@ -46,6 +47,11 @@ class VerifyOtpViewModel(
             return
         }
 
+        // Set global auth state
+        authViewModel.setLoading(true)
+        authViewModel.setOperation(AuthOperation.VerifyOtp)
+        authViewModel.setAuthError(null)
+
         _verifyState.value = RequestState.Loading
 
         viewModelScope.launch {
@@ -53,6 +59,11 @@ class VerifyOtpViewModel(
                 email = email,
                 otp = otp.trim()
             )
+
+            // Reset global auth state
+            authViewModel.setLoading(false)
+            authViewModel.setOperation(AuthOperation.Idle)
+
             _verifyState.value = result
 
             when (result) {
@@ -62,7 +73,11 @@ class VerifyOtpViewModel(
                     authViewModel.setCurrentUser(user)
                     onSuccess()
                 }
-                is RequestState.Error -> onError(result.message ?: "Verification failed")
+                is RequestState.Error -> {
+                    val errorMsg = result.message ?: "Verification failed"
+                    authViewModel.setAuthError(errorMsg)
+                    onError(errorMsg)
+                }
                 else -> {}
             }
         }

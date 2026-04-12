@@ -13,6 +13,6 @@ data class Location(
     val address: String? = null,
     val propertyId: String? = null,
     val userId: String? = null,
-    val createdAt: Instant,
-    val updatedAt: Instant
+    val createdAt: Instant? = null,
+    val updatedAt: Instant? = null
 )

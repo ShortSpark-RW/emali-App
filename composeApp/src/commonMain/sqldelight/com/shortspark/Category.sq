@@ -2,21 +2,17 @@ CREATE TABLE Category (
     id TEXT NOT NULL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     details TEXT,
-    parentId TEXT,
-    sortOrder INTEGER NOT NULL DEFAULT 0,
-    isActive INTEGER NOT NULL DEFAULT 1,
     createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(parentId) REFERENCES Category(id) ON DELETE SET NULL
+    updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 insertCategory:
-INSERT INTO Category (id, name, details, parentId, sortOrder, isActive, createdAt, updatedAt)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO Category (id, name, details, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?);
 
 insertOrReplaceCategory:
-INSERT OR REPLACE INTO Category (id, name, details, parentId, sortOrder, isActive, createdAt, updatedAt)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO Category (id, name, details, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?);
 
 readAllCategories:
 SELECT * FROM Category;
@@ -25,11 +21,14 @@ getCategoryById:
 SELECT * FROM Category WHERE id = ?;
 
 selectAllCategories:
-SELECT * FROM Category ORDER BY sortOrder ASC;
+SELECT * FROM Category ORDER BY name ASC;
 
 updateCategory:
-UPDATE Category SET name = ?, details = ?, parentId = ?, sortOrder = ?, isActive = ?, updatedAt = CURRENT_TIMESTAMP
+UPDATE Category SET name = ?, details = ?, updatedAt = CURRENT_TIMESTAMP
 WHERE id = ?;
 
 deleteCategory:
 DELETE FROM Category WHERE id = ?;
+
+removeAllCategories:
+DELETE FROM Category;

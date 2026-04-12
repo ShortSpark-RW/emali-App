@@ -10,7 +10,7 @@ data class Place(
     val id: String,
     val name: String,
     val featuredImg: String? = null,
-    val sectorId: String,
-    val createdAt: Instant,
-    val updatedAt: Instant
+    val sectorId: String? = null,
+    val createdAt: Instant? = null,
+    val updatedAt: Instant? = null
 )

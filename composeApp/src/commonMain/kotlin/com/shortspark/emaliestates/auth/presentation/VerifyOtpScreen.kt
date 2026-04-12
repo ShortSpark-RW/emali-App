@@ -16,10 +16,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.background
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,12 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
 import com.shortspark.emaliestates.auth.viewModel.VerifyOtpViewModel
-import com.shortspark.emaliestates.domain.RequestState
-import com.shortspark.emaliestates.navigation.BaseScreen
-import com.shortspark.emaliestates.navigation.Graph
+import com.shortspark.emaliestates.navigation.NavGraph
 import com.shortspark.emaliestates.util.components.auth.LogoSection
 import com.shortspark.emaliestates.util.components.auth.OtpInput
 import com.shortspark.emaliestates.util.components.common.AnimatedMessage
@@ -43,6 +40,7 @@ import com.shortspark.emaliestates.util.components.common.MessageType
 import com.shortspark.emaliestates.util.components.common.AppButton
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import androidx.compose.material3.CircularProgressIndicator
 
 @Composable
 fun VerifyOtpScreen(
@@ -60,16 +58,17 @@ fun VerifyOtpScreen(
 
     val viewModel: VerifyOtpViewModel = koinViewModel(parameters = { parametersOf(email) })
     val authViewModel: AuthViewModel = koinViewModel()
+    val authState by authViewModel.authState.collectAsState()
 
     val otpError = viewModel.otpError
     val verifyState = viewModel.verifyState.value
     val isLoading = verifyState.isLoading()
 
     // Navigate to home when user becomes authenticated (after OTP verification)
-    LaunchedEffect(authViewModel.authState) {
-        if (authViewModel.authState.value.currentUser != null) {
-            navController.navigate(Graph.BASE) {
-                popUpTo(Graph.AUTHENTICATION) { inclusive = true }
+    LaunchedEffect(authState.currentUser) {
+        if (authState.currentUser != null) {
+            navController.navigate(NavGraph.Base) {
+                popUpTo(NavGraph.Auth) { inclusive = true }
             }
         }
     }
@@ -175,6 +174,21 @@ fun VerifyOtpScreen(
                     onClick = {
                         viewModel.verifyOtp()
                     }
+                )
+            }
+        }
+
+        // Unified loading overlay
+        if (authState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.secondary,
+                    strokeWidth = 3.dp
                 )
             }
         }

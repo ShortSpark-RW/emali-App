@@ -37,6 +37,7 @@ import coil3.compose.AsyncImage
 import com.shortspark.emaliestates.domain.Property
 import com.shortspark.emaliestates.domain.SaleType
 import com.shortspark.emaliestates.util.components.common.rememberDebouncedNavigator
+import com.shortspark.emaliestates.util.helpers.formatPrice
 
 // ─── Hero Image Section ───────────────────────────────────────────────────────
 
@@ -652,7 +653,7 @@ fun PropertyCard(
                 Text("📍", fontSize = 10.sp)
                 Spacer(Modifier.width(2.dp))
                 Text(
-                    text = property.locationId ?: "",
+                    text = property.placeName ?: property.address ?: property.locationId ?: "",
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     fontSize = 11.sp
                 )
@@ -660,7 +661,7 @@ fun PropertyCard(
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = "$${formatPrice(property.price)}",
+                    text = "RWF ${formatPrice(property.price)}",
                     color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
@@ -671,12 +672,4 @@ fun PropertyCard(
             }
         }
     }
-}
-
-// ─── Utility ──────────────────────────────────────────────────────────────────
-
-fun formatPrice(price: Float): String = when {
-    price >= 1_000_000 -> "${(price / 1_000_000 * 10).toInt() / 10.0}M"
-    price >= 1_000     -> "${(price / 1_000).toInt()}K"
-    else               -> "${price.toInt()}"
 }

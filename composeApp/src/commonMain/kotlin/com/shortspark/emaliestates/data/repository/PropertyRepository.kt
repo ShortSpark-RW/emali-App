@@ -17,7 +17,7 @@ class PropertyRepository(
 ) {
     private val queries = localDatabase.propertyQueries
 
-    suspend fun getLocalProperties(): List<Property> = withContext(Dispatchers.IO) {
+    suspend fun getLocalProperties(): List<Property> = withContext(Dispatchers.Default) {
         queries.readAllProperties().executeAsList().map { row ->
             Property(
                 id = row.id,
@@ -67,7 +67,7 @@ class PropertyRepository(
         }
     }
 
-    suspend fun getPropertyById(id: String): Property? = withContext(Dispatchers.IO) {
+    suspend fun getPropertyById(id: String): Property? = withContext(Dispatchers.Default) {
         queries.getPropertyById(id).executeAsOneOrNull()?.let { row ->
             Property(
                 id = row.id,
@@ -117,7 +117,7 @@ class PropertyRepository(
         }
     }
 
-    suspend fun saveProperties(properties: List<Property>) = withContext(Dispatchers.IO) {
+    suspend fun saveProperties(properties: List<Property>) = withContext(Dispatchers.Default) {
         queries.transaction {
             properties.forEach { property ->
                 queries.insertProperty(
@@ -155,14 +155,14 @@ class PropertyRepository(
                     ownerId = property.ownerId,
                     categoryId = property.categoryId,
                     placeId = property.placeId,
-                    placeName = property.placeName,
-                    categoryName = property.categoryName,
-                    ownerName = property.ownerName,
-                    ownerPhone = property.ownerPhone,
-                    ownerProfileImg = property.ownerProfileImg,
-                    latitude = property.latitude?.toDouble(),
-                    longitude = property.longitude?.toDouble(),
-                    address = property.address,
+                    placeName = property.place?.name,
+                    categoryName = property.category?.name,
+                    ownerName = property.owner?.name,
+                    ownerPhone = property.owner?.phone,
+                    ownerProfileImg = property.owner?.profileImg,
+                    latitude = property.location?.latitude?.toDouble(),
+                    longitude = property.location?.longitude?.toDouble(),
+                    address = property.location?.address ?: property.address,
                     createdAt = property.createdAt.toString(),
                     updatedAt = property.updatedAt.toString()
                 )
@@ -170,7 +170,7 @@ class PropertyRepository(
         }
     }
 
-    suspend fun clearProperties() = withContext(Dispatchers.IO) {
+    suspend fun clearProperties() = withContext(Dispatchers.Default) {
         queries.removeAllProperties()
     }
 }

@@ -13,7 +13,7 @@ class AuthSDK(
     suspend fun login(
         email: String,
         password: String
-    ): RequestState<Any> {
+    ): RequestState<User> {
         return try {
             val response = api.login(email, password)
 
@@ -50,9 +50,13 @@ class AuthSDK(
         }
     }
 
-    suspend fun google(access_token: String?): Any {
+    suspend fun google(idToken: String?): RequestState<User> {
         return try {
-            val response = api.google(access_token)
+            if (idToken.isNullOrEmpty()) {
+                return RequestState.Error("Google ID token is missing")
+            }
+
+            val response = api.google(idToken)
 
             if (response.status != "success") {
                 return RequestState.Error(response.message.joinToString(separator = "\n"))
@@ -65,10 +69,9 @@ class AuthSDK(
                 )
                 return RequestState.Success(authData.user)
             }
-            return RequestState.Error("Login successful but no user data was returned.")
-
+            return RequestState.Error("Google login successful but no user data was returned.")
         } catch (e: Exception) {
-            return RequestState.Error(e.message ?: "Login failed")
+            return RequestState.Error(e.message ?: "Google login failed")
         }
     }
 
@@ -79,7 +82,7 @@ class AuthSDK(
         phone: String,
         gender: String,
         dateOfBirth: String? = null
-    ): RequestState<Any> {
+    ): RequestState<Unit> {
         return try {
             val response = api.signup(
                 email = email,
@@ -104,7 +107,7 @@ class AuthSDK(
     suspend fun verifyOtp(
         email: String,
         otp: String
-    ): RequestState<Any> {
+    ): RequestState<User> {
         return try {
             val response = api.verifyOtp(email, otp)
 
@@ -158,14 +161,14 @@ class AuthSDK(
         gender: String? = null,
         dateOfBirth: String? = null,
         locationId: String? = null
-    ): RequestState<Any> {
+    ): RequestState<User> {
         return try {
             val response = api.updateProfile(fullName, phone, gender, dateOfBirth, locationId)
             if (response.status != "success") {
                 RequestState.Error(response.message.joinToString(separator = "\n"))
             } else {
-                response.data?.let { user ->
-                    RequestState.Success(user)
+                response.data?.let { authData ->
+                    RequestState.Success(authData.user)
                 } ?: RequestState.Error("Profile update succeeded but no data returned")
             }
         } catch (e: Exception) {

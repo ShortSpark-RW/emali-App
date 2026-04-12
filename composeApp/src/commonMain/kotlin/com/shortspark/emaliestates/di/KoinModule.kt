@@ -9,6 +9,7 @@ import com.shortspark.emaliestates.home.viewModel.ProfileViewModel
 import com.shortspark.emaliestates.ui.screens.search.SearchViewModel
 import com.shortspark.emaliestates.data.AuthSDK
 import com.shortspark.emaliestates.data.PropertySDK
+import com.shortspark.emaliestates.data.CategorySDK
 import com.shortspark.emaliestates.data.local.LocalDatabase
 import com.shortspark.emaliestates.data.remote.AuthApi
 import com.shortspark.emaliestates.data.remote.CategoryApi
@@ -18,6 +19,7 @@ import com.shortspark.emaliestates.data.repository.AuthRepository
 import com.shortspark.emaliestates.data.repository.CategoryRepository
 import com.shortspark.emaliestates.data.repository.PropertyRepository
 import com.shortspark.emaliestates.property.viewModel.PropertyDetailViewModel
+import com.shortspark.emaliestates.home.viewModel.SplashViewModel
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -70,6 +72,9 @@ val sharedModule = module {
         )
     }
 
+    // Splash ViewModel
+    viewModel { SplashViewModel(get()) }
+
     // Auth ViewModel - depends on AuthSDK
     viewModel {
         AuthViewModel(
@@ -78,10 +83,11 @@ val sharedModule = module {
         )
     }
 
-    // Signup ViewModel - depends on AuthSDK
+    // Signup ViewModel - depends on AuthSDK and AuthViewModel
     viewModel {
         SignupViewModel(
-            sdk = get()
+            sdk = get(),
+            authViewModel = get()
         )
     }
 
@@ -129,11 +135,20 @@ val sharedModule = module {
         )
     }
 
-    // Main ViewModel - depends on PropertySDK and CategoryRepository
+    // Category SDK
+    single<CategorySDK> {
+        CategorySDK(
+            repository = get(),
+            settings = get(),
+            clock = get()
+        )
+    }
+
+    // Main ViewModel - depends on PropertySDK and CategorySDK
     viewModel {
         MainViewModel(
             sdk = get(),
-            categoryRepository = get()
+            categorySDK = get()
         )
     }
 

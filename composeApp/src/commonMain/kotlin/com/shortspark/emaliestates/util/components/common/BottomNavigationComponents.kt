@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,20 +28,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.shortspark.emaliestates.navigation.Screen
 
 // ─── Bottom Nav Destinations ─────────────────────────────────────────────────
 
 sealed class BottomNavItem(
-    val route: String,
+    val route: Any,
     val label: String,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    object Home : BottomNavItem("home", "Home", Icons.Filled.Home, Icons.Outlined.Home)
-    object Map : BottomNavItem("map", "Map", Icons.Filled.Map, Icons.Outlined.Map)
-    object Tours : BottomNavItem("tours", "eTours", Icons.Outlined.PlayCircle, Icons.Outlined.PlayCircle)
-    object Profile : BottomNavItem("profile", "Profile", Icons.Filled.AccountCircle, Icons.Outlined.AccountCircle)
+    object Home : BottomNavItem(Screen.Base.Home, "Home", Icons.Filled.Home, Icons.Outlined.Home)
+    object Map : BottomNavItem(Screen.Base.Map, "Map", Icons.Filled.Map, Icons.Outlined.Map)
+    object Tours : BottomNavItem(Screen.Base.Tours, "eTours", Icons.Outlined.PlayCircle, Icons.Outlined.PlayCircle)
+    object Profile : BottomNavItem(Screen.Base.Profile, "Profile", Icons.Filled.AccountCircle, Icons.Outlined.AccountCircle)
 }
 
 val bottomNavItems = listOf(
@@ -58,8 +62,8 @@ fun AppBottomNavigationBar(
     items: List<BottomNavItem>,
     onAddClick: () -> Unit
 ) {
-    // Determine current selected item from back stack
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
     Box(
         modifier = Modifier
@@ -78,17 +82,20 @@ fun AppBottomNavigationBar(
         ) {
             // Left two items
             items.take(2).forEach { item ->
+                val isSelected = currentDestination?.hierarchy?.any { 
+                    it.hasRoute(item.route::class) 
+                } == true
+
                 BottomNavItemView(
                     item = item,
-                    isSelected = item.route == currentRoute,
+                    isSelected = isSelected,
                     onClick = {
-                        // Navigate to the selected route, avoiding duplicates
                         navController.navigate(item.route) {
-                            launchSingleTop = true
-                            restoreState = true
                             popUpTo(navController.graph.startDestinationId) {
                                 saveState = true
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
                     }
                 )
@@ -99,16 +106,20 @@ fun AppBottomNavigationBar(
 
             // Right two items
             items.drop(2).forEach { item ->
+                val isSelected = currentDestination?.hierarchy?.any { 
+                    it.hasRoute(item.route::class) 
+                } == true
+
                 BottomNavItemView(
                     item = item,
-                    isSelected = item.route == currentRoute,
+                    isSelected = isSelected,
                     onClick = {
                         navController.navigate(item.route) {
-                            launchSingleTop = true
-                            restoreState = true
                             popUpTo(navController.graph.startDestinationId) {
                                 saveState = true
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
                     }
                 )
@@ -156,7 +167,7 @@ fun BottomNavItemView(
 
 @Composable
 fun EToursLabel(isSelected: Boolean) {
-    val baseColor = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+    val baseColor = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
     Row {
         Text(
             text = "e",

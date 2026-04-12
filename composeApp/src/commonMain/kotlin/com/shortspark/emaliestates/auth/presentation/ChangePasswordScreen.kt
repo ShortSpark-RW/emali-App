@@ -25,7 +25,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.shortspark.emaliestates.navigation.BaseScreen
+import com.shortspark.emaliestates.navigation.NavGraph
+import com.shortspark.emaliestates.navigation.Screen
 import com.shortspark.emaliestates.util.components.auth.LogoSection
 import com.shortspark.emaliestates.util.components.auth.PasswordOutlinedTextField
 import com.shortspark.emaliestates.util.components.common.AppButton
@@ -49,7 +50,6 @@ fun ChangePasswordContent(
     var confirmPasswordVisibility by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
     var isConfirmPasswordFocused by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
 
 
     Box(
@@ -90,7 +90,6 @@ fun ChangePasswordContent(
                     value = password,
                     onValueChange = {
                         password = it
-                        errorMessage = ""
                     },
                     label = "Password",
                     modifier = Modifier.fillMaxWidth(),
@@ -107,7 +106,6 @@ fun ChangePasswordContent(
                     value = confirmPassword,
                     onValueChange = {
                         confirmPassword = it
-                        errorMessage = ""
                     },
                     label = "Confirm Password",
                     placeholder = "Confirm your password",
@@ -133,7 +131,9 @@ fun ChangePasswordContent(
                     textColor = MaterialTheme.colorScheme.onSecondary,
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
                     onClick = {
-                        navController.navigate(BaseScreen.Home.route)
+                        navController.navigate(NavGraph.Base) {
+                             popUpTo(NavGraph.Auth) { inclusive = true }
+                        }
                     }
                 )
             }

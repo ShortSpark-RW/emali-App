@@ -1,49 +1,58 @@
 package com.shortspark.emaliestates.home.presentation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.shortspark.emaliestates.domain.Property
-import com.shortspark.emaliestates.domain.RequestState
+import com.shortspark.emaliestates.domain.SaleType
 import com.shortspark.emaliestates.home.viewModel.MainViewModel
-import com.shortspark.emaliestates.navigation.BaseScreen
+import com.shortspark.emaliestates.navigation.Screen
+import com.shortspark.emaliestates.util.helpers.formatPrice
 import org.koin.compose.viewmodel.koinViewModel
 
-// ─── UI Data Models ──────────────────────────────────────────────────────────
+// ─── UI Models ──────────────────────────────────────────────────────────────
 
 data class PropertyUiModel(
     val id: String,
     val title: String,
     val location: String?,
     val price: String,
-    val rating: Float,
+    val priceUnit: String? = null,
     val badge: String,
     val imageUrl: String?,
-    val isFavorited: Boolean = false,
-    val bedrooms: Int = 0,
-    val bathrooms: Int = 0,
-    val area: String? = null
+    val rating: Float = 4.5f
 )
 
 data class CategoryUiModel(
@@ -62,540 +71,361 @@ fun HomeScreen(
 ) {
     val propertiesState by viewModel.allProperties
     val categoriesState by viewModel.allCategories
+    val selectedCategoryId by viewModel.selectedCategoryId
 
-    var selectedCategoryIndex by remember { mutableStateOf(0) }
-    var selectedCategoryId: String? by remember { mutableStateOf(null) }
     var searchQuery by remember { mutableStateOf("") }
 
-    val categories = (categoriesState as? RequestState.Success)?.data?.let { cats ->
-        listOf(CategoryUiModel(id = "all", name = "All")) + cats.map { cat ->
-            CategoryUiModel(id = cat.id, name = cat.name)
-        }
-    } ?: listOf(CategoryUiModel("all", "All"))
-
-    val properties = (propertiesState as? RequestState.Success)?.data ?: emptyList()
-    val isLoading = propertiesState is RequestState.Loading
-    val error = (propertiesState as? RequestState.Error)?.message
-
-    // Group properties by type
-    val propertyGroups = remember(properties, selectedCategoryId) {
-        groupPropertiesByType(properties, selectedCategoryId)
+    val categories = remember(categoriesState) {
+        val cats = categoriesState.getDataOrNull()?.map { CategoryUiModel(it.id, it.name) } ?: emptyList()
+        listOf(CategoryUiModel("all", "All")) + cats
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = {
-            // Bottom bar is handled by MainScreenContainer
+    val propertyGroups = remember(propertiesState) {
+        val allProperties = propertiesState.getDataOrNull() ?: emptyList()
+        
+        val groupedByBadge = allProperties
+            .map { it.toUiModel() }
+            .groupBy { it.badge }
+
+        val forRent = allProperties
+            .filter { it.saleType == SaleType.RENT }
+            .map { it.toUiModel() }
+        
+        val forSale = allProperties
+            .filter { it.saleType == SaleType.SALE || it.saleType == SaleType.BOTH }
+            .map { it.toUiModel() }
+
+        val finalGroups = linkedMapOf<String, List<PropertyUiModel>>()
+        if (forRent.isNotEmpty()) finalGroups["FOR_RENT"] = forRent
+        if (forSale.isNotEmpty()) finalGroups["FOR_SALE"] = forSale
+        
+        // Add existing badge-based groups
+        groupedByBadge.forEach { (badge, props) ->
+            if (!finalGroups.containsKey(badge)) {
+                finalGroups[badge] = props
+            }
         }
-    ) { innerPadding ->
+        
+        finalGroups
+    }
+
+    val isLoading = propertiesState.isLoading()
+    val error = propertiesState.getErrorOrNull()?.message
+
+    val scrollState = rememberScrollState()
+    var isRefreshing by remember { mutableStateOf(false) }
+    var pulledDistance by remember { mutableStateOf(0f) }
+    val threshold = with(LocalDensity.current) { 120.dp.toPx() }
+
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y > 0 && scrollState.value == 0 && !isRefreshing) {
+                    pulledDistance += available.y
+                    if (pulledDistance > threshold) {
+                        isRefreshing = true
+                        viewModel.refresh()
+                    }
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (scrollState.value > 0) pulledDistance = 0f
+                return Offset.Zero
+            }
+        }
+    }
+
+    LaunchedEffect(isLoading) {
+        if (!isLoading) {
+            isRefreshing = false
+            pulledDistance = 0f
+        }
+    }
+
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+                .nestedScroll(nestedScrollConnection)
+                .verticalScroll(scrollState)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            // Top bar
             HomeTopBar()
 
             Spacer(Modifier.height(16.dp))
 
-            // Search bar with filter
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                onFilterClick = {
+                    navController.currentBackStackEntry?.savedStateHandle?.set("searchQuery", searchQuery)
+                    navController.navigate(Screen.Base.Search)
+                },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(Modifier.height(20.dp))
+
+            val categoryListState = rememberLazyListState()
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                state = categoryListState,
+                contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                SearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    onFilterClick = {
-                        // Pass current query to filter screen
-                        navController.currentBackStackEntry?.savedStateHandle?.set("searchQuery", searchQuery)
-                        navController.navigate(BaseScreen.Search.route)
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Category chips
-            if (categories.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    categories.forEachIndexed { index, category ->
-                        val isSelected = when {
-                            index == 0 -> selectedCategoryId == null
-                            else -> category.id == selectedCategoryId
-                        }
-
-                        CategoryChip(
-                            label = category.name,
-                            selected = isSelected,
-                            onClick = {
-                                selectedCategoryIndex = index
-                                selectedCategoryId = if (index == 0) null else category.id
-                                viewModel.selectCategory(selectedCategoryId)
-                            }
-                        )
+                items(
+                    items = categories,
+                    key = { it.id }
+                ) { category ->
+                    val isSelected = remember(selectedCategoryId) {
+                        if (category.id == "all") selectedCategoryId == null 
+                        else selectedCategoryId == category.id
                     }
+                    
+                    CategoryChip(
+                        label = category.name,
+                        selected = isSelected,
+                        onClick = { 
+                            val newId = if (category.id == "all") null else category.id
+                            if (selectedCategoryId != newId) {
+                                viewModel.selectCategory(newId)
+                            }
+                        }
+                    )
                 }
-
-                Spacer(Modifier.height(24.dp))
             }
 
-            // Property sections
-            if (isLoading) {
-                LoadingState()
-            } else if (error != null) {
-                ErrorState(message = error, onRetry = { viewModel.refresh() })
-            } else {
-                propertyGroups.forEach { (type, props) ->
-                    if (props.isNotEmpty()) {
+            Spacer(Modifier.height(24.dp))
+
+            when {
+                isLoading && !isRefreshing -> LoadingState()
+                error != null -> ErrorState(message = error, onRetry = { viewModel.refresh() })
+                propertyGroups.isEmpty() -> EmptyState(message = "No properties found")
+                else -> {
+                    propertyGroups.forEach { (type, props) ->
                         PropertySection(
                             title = getSectionTitle(type),
-                            properties = props.map { it.toUiModel() },
+                            properties = props,
                             onSeeAll = { onSeeAllClick(type) },
                             onPropertyClick = onPropertyClick
                         )
                         Spacer(Modifier.height(24.dp))
                     }
                 }
-
-                if (propertyGroups.all { it.value.isEmpty() }) {
-                    EmptyState(message = "No properties found")
-                }
             }
 
-            Spacer(Modifier.height(80.dp)) // Space for bottom nav
+            Spacer(Modifier.height(80.dp))
         }
     }
 }
 
-// ─── Top Bar ──────────────────────────────────────────────────────────────────
+// ─── Components ─────────────────────────────────────────────────────────────
 
 @Composable
 private fun HomeTopBar() {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Logo
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "e",
                 color = MaterialTheme.colorScheme.secondary,
-                fontSize = 24.sp,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Black,
-                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                fontStyle = FontStyle.Italic
             )
             Text(
                 text = "MALI ESTATES",
                 color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 3.sp
+                letterSpacing = 2.sp
             )
         }
-
         Spacer(Modifier.weight(1f))
-
-        // Notification icon
-        IconButton(
-            onClick = {},
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Notifications,
-                contentDescription = "Notifications",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        Spacer(Modifier.width(8.dp))
-
-        // Message icon
-        IconButton(
-            onClick = {},
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.ChatBubbleOutline,
-                contentDescription = "Messages",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
-}
-
-// ─── Search Bar ───────────────────────────────────────────────────────────────
-
-@Composable
-private fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onFilterClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    TextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = modifier
-            .height(52.dp)
-            .clip(RoundedCornerShape(16.dp)),
-        placeholder = {
-            Text("Search properties...", color = MaterialTheme.colorScheme.onSurface.copy(0.6f))
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface.copy(0.6f),
-                modifier = Modifier.size(20.dp)
-            )
-        },
-        trailingIcon = {
-            Icon(
-                imageVector = Icons.Default.Tune, // Equalizer/filter icon
-                contentDescription = "Filter search",
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable(onClick = onFilterClick)
-            )
-        },
-        singleLine = true,
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-            cursorColor = MaterialTheme.colorScheme.secondary,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            focusedTrailingIconColor = MaterialTheme.colorScheme.secondary,
-            unfocusedTrailingIconColor = MaterialTheme.colorScheme.secondary
-        ),
-        shape = RoundedCornerShape(16.dp)
-    )
-}
-
-// ─── Filter Button ────────────────────────────────────────────────────────────
-
-@Composable
-private fun FilterButton() {
-    Box(
-        modifier = Modifier
-            .size(52.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable {},
-        contentAlignment = Alignment.Center
-    ) {
         Icon(
-            imageVector = Icons.Default.Tune,
-            contentDescription = "Filter",
-            tint = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.size(22.dp)
+            imageVector = Icons.Outlined.Notifications,
+            contentDescription = "Notifications",
+            tint = Color.White,
+            modifier = Modifier.size(28.dp).clickable { }
+        )
+        Spacer(Modifier.width(16.dp))
+        Icon(
+            imageVector = Icons.Outlined.ChatBubbleOutline,
+            contentDescription = "Messages",
+            tint = Color.White,
+            modifier = Modifier.size(28.dp).clickable { }
         )
     }
 }
 
-// ─── Category Chip ────────────────────────────────────────────────────────────
+@Composable
+fun SearchBar(query: String, onQueryChange: (String) -> Unit, onFilterClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        TextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.weight(1f).height(56.dp).clip(RoundedCornerShape(12.dp)).border(1.dp, Color.Gray.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
+            placeholder = { Text("search", color = Color.Gray) },
+            leadingIcon = { Icon(Icons.Default.Search, "Search", tint = Color.Gray) },
+            colors = TextFieldDefaults.colors(
+                unfocusedContainerColor = Color.Transparent,
+                focusedContainerColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                cursorColor = Color.White
+            ),
+            singleLine = true
+        )
+        
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .border(1.dp, MaterialTheme.colorScheme.secondary, CircleShape)
+                .clickable { onFilterClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Default.Tune, "Filter", tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
+        }
+    }
+}
 
 @Composable
-private fun CategoryChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val backgroundColor = if (selected) {
-        MaterialTheme.colorScheme.secondary
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
-    }
-
-    val textColor = if (selected) {
-        MaterialTheme.colorScheme.onSecondary
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-    }
-
+fun CategoryChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val backgroundColor = if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+    
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 10.dp),
+            .clickable { onClick() }
+            .padding(horizontal = 24.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
-            color = textColor,
-            fontSize = 14.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+            color = contentColor,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
         )
     }
 }
 
-// ─── Property Section ─────────────────────────────────────────────────────────
-
 @Composable
-private fun PropertySection(
+fun PropertySection(
     title: String,
     properties: List<PropertyUiModel>,
     onSeeAll: () -> Unit,
     onPropertyClick: (String) -> Unit
 ) {
     Column {
-        // Section header
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Text(
-                text = title,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "See all",
+                "See all",
+                modifier = Modifier.clickable { onSeeAll() },
                 color = MaterialTheme.colorScheme.secondary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.clickable { onSeeAll() }
+                fontSize = 14.sp
             )
         }
-
-        Spacer(Modifier.height(14.dp))
-
-        // Horizontal scrollable cards
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        Spacer(Modifier.height(16.dp))
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            properties.forEach { property ->
-                PropertyCard(
-                    property = property,
-                    onClick = { onPropertyClick(property.id) }
-                )
+            items(properties) { property ->
+                PropertyCard(property = property, onClick = { onPropertyClick(property.id) })
             }
         }
     }
 }
 
-// ─── Property Card ────────────────────────────────────────────────────────────
-
 @Composable
-fun PropertyCard(
-    property: PropertyUiModel,
-    onClick: () -> Unit
-) {
-    var favorited by remember { mutableStateOf(property.isFavorited) }
-
-    Column(
-        modifier = Modifier
-            .width(180.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .clickable(onClick = onClick)
+fun PropertyCard(property: PropertyUiModel, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.width(260.dp).clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        // Image container
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp)
-        ) {
-            if (property.imageUrl != null) {
+        Column {
+            Box(modifier = Modifier.height(160.dp).fillMaxWidth()) {
                 AsyncImage(
                     model = property.imageUrl,
-                    contentDescription = property.title,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    placeholder = ColorPainter(Color.DarkGray)
                 )
-            } else {
-                // Placeholder
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Home,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface.copy(0.3f),
-                        modifier = Modifier.size(48.dp)
-                    )
-                }
-            }
-
-            // Gradient overlay at bottom
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .align(Alignment.BottomCenter)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color(0xCC000000))
-                        )
-                    )
-            )
-
-            // Badge - bottom left
-            property.badge.takeIf { it.isNotBlank() }?.let { badge ->
-                Box(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .align(Alignment.BottomStart)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0x99000000))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                
+                Surface(
+                    modifier = Modifier.padding(12.dp).align(Alignment.TopStart),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.secondary
                 ) {
                     Text(
-                        text = badge,
-                        color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
+                        property.badge,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondary
                     )
                 }
             }
-
-            // Favorite button - top right
-            Box(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .align(Alignment.TopEnd)
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(Color(0x99000000))
-                    .clickable { favorited = !favorited },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = if (favorited) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = "Favorite",
-                    tint = if (favorited) MaterialTheme.colorScheme.secondary else Color.White,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-        }
-
-        // Card body
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            // Title
-            Text(
-                text = property.title,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(Modifier.height(6.dp))
-
-            // Rating + Price row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Rating
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = property.rating.toString(),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        fontSize = 12.sp
-                    )
-                }
-
-                // Price
+            
+            Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = property.price,
-                    color = MaterialTheme.colorScheme.secondary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
+                    property.title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    maxLines = 1,
+                    color = Color.White
                 )
-            }
-
-            Spacer(Modifier.height(6.dp))
-
-            // Location + specs row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+                Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface.copy(0.6f),
-                        modifier = Modifier.size(12.dp)
-                    )
+                    Icon(Icons.Default.LocationOn, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = property.location ?: "Location unknown",
-                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f),
-                        fontSize = 11.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        property.location ?: "Unknown",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        maxLines = 1
                     )
                 }
-
-                // Quick specs (bed/bath/area)
-                if (property.bedrooms > 0 || property.bathrooms > 0 || property.area != null) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.secondary)) {
+                                append(property.price)
+                            }
+                            property.priceUnit?.let { unit ->
+                                withStyle(SpanStyle(fontSize = 12.sp, color = Color.Gray)) {
+                                    append("/$unit")
+                                }
+                            }
+                        }
+                    )
+                    
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (property.bedrooms > 0) {
-                            Text(
-                                text = "${property.bedrooms} bed",
-                                color = MaterialTheme.colorScheme.onSurface.copy(0.6f),
-                                fontSize = 10.sp
-                            )
-                            Spacer(Modifier.width(6.dp))
-                        }
-                        if (property.bathrooms > 0) {
-                            Text(
-                                text = "${property.bathrooms} bath",
-                                color = MaterialTheme.colorScheme.onSurface.copy(0.6f),
-                                fontSize = 10.sp
-                            )
-                        }
+                        Icon(Icons.Default.Star, null, tint = Color(0xFFFFB400), modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(property.rating.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }
@@ -603,108 +433,49 @@ fun PropertyCard(
     }
 }
 
-// ─── State UI Components ──────────────────────────────────────────────────────
-
 @Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
+fun LoadingState() {
+    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
         CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
     }
 }
 
 @Composable
-private fun ErrorState(message: String, onRetry: () -> Unit) {
+fun ErrorState(message: String, onRetry: () -> Unit) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(32.dp),
+        modifier = Modifier.fillMaxWidth().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "Error loading properties",
-            color = MaterialTheme.colorScheme.error,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.onSurface.copy(0.7f),
-            fontSize = 14.sp
-        )
-        Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary
-            )
-        ) {
-            Text("Retry")
-        }
+        Text(message, color = MaterialTheme.colorScheme.error)
+        Button(onClick = onRetry) { Text("Retry") }
     }
 }
 
 @Composable
-private fun EmptyState(message: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(64.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.onSurface.copy(0.6f),
-            fontSize = 14.sp
-        )
+fun EmptyState(message: String) {
+    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+        Text(message, color = Color.Gray)
     }
 }
 
-// ─── Mapping & Utilities ──────────────────────────────────────────────────────
-
-private fun Property.toUiModel(): PropertyUiModel {
-    val formattedPrice = when {
-        price < 1_000_000 -> "$${price.toInt()}"
-        else -> "$${(price / 1_000_000).toInt()}M"
-    }
-
-    val locationName = placeName ?: locationId ?: "Unknown location"
-
-    return PropertyUiModel(
-        id = id,
-        title = title,
-        location = locationName,
-        price = formattedPrice,
-        rating = 0f, // TODO: Add rating to domain.Property
-        badge = type.name,
-        imageUrl = featuredImg,
-        bedrooms = bedrooms,
-        bathrooms = bathrooms,
-        area = if (area > 0) "${area.toInt()} m²" else null
-    )
-}
-
-private fun groupPropertiesByType(
-    properties: List<Property>,
-    categoryId: String?
-): Map<String, List<Property>> {
-    val filtered = if (categoryId != null) {
-        properties.filter { it.categoryId == categoryId }
-    } else {
-        properties
-    }
-
-    return filtered.groupBy { it.saleType.name }
-}
-
-private fun getSectionTitle(type: String): String = when (type.lowercase()) {
-    "rent" -> "Houses for Rent"
-    "sale" -> "Houses for Sale"
-    "land" -> "Land for Sale"
+private fun getSectionTitle(type: String): String = when(type.uppercase()) {
+    "HOUSE" -> "House"
+    "LAND" -> "Land"
+    "APARTMENT" -> "Apartment"
+    "FOR_RENT" -> "For Rent"
+    "FOR_SALE" -> "For Sale"
     else -> "Properties"
 }
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+private fun Property.toUiModel() = PropertyUiModel(
+    id = id,
+    title = title,
+    location = place?.name ?: placeName ?: location?.address ?: address ?: "Unknown",
+    price = "RWF ${formatPrice(price)}",
+    priceUnit = if (saleType == SaleType.RENT) "month" else null,
+    badge = type.name,
+    imageUrl = featuredImg,
+    rating = 4.5f
+)

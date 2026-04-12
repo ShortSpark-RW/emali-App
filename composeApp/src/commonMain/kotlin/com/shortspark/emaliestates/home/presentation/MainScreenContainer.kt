@@ -16,8 +16,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
-import com.shortspark.emaliestates.navigation.BaseScreen
-import com.shortspark.emaliestates.navigation.Graph
+import com.shortspark.emaliestates.navigation.NavGraph
+import com.shortspark.emaliestates.navigation.Screen
 import com.shortspark.emaliestates.util.components.common.AppBottomNavigationBar
 import com.shortspark.emaliestates.util.components.common.BottomNavItem
 import org.koin.compose.koinInject
@@ -47,29 +47,29 @@ fun MainScreenContainer(outerNavController: NavController) {
     ) { innerPadding ->
         NavHost(
             navController = nestedNavController,
-            startDestination = BaseScreen.Home.route,
+            startDestination = Screen.Base.Home,
             modifier = Modifier.padding(innerPadding),
             enterTransition = { fadeIn(animationSpec = tween(300)) },
             exitTransition = { fadeOut(animationSpec = tween(300)) },
             popEnterTransition = { fadeIn(animationSpec = tween(300)) },
             popExitTransition = { fadeOut(animationSpec = tween(300)) }
         ) {
-            composable(BaseScreen.Home.route) {
+            composable<Screen.Base.Home> {
                 HomeScreen(
                     navController = outerNavController,
                     onPropertyClick = { propertyId ->
-                        outerNavController.navigate(BaseScreen.PropertyDetail.createRoute(propertyId))
+                        outerNavController.navigate(Screen.Base.PropertyDetail(propertyId))
                     },
                     onSeeAllClick = { /* TODO: Handle see all navigation */ }
                 )
             }
-            composable(BaseScreen.Map.route) {
+            composable<Screen.Base.Map> {
                 PlaceholderScreen("Map", outerNavController)
             }
-            composable(BaseScreen.Tours.route) {
+            composable<Screen.Base.Tours> {
                 PlaceholderScreen("eTours", outerNavController)
             }
-            composable(BaseScreen.Profile.route) {
+            composable<Screen.Base.Profile> {
                 ProfileScreen(navController = outerNavController)
             }
         }
@@ -102,8 +102,8 @@ private fun PlaceholderScreen(
             Button(
                 onClick = {
                     authViewModel.logout()
-                    navController?.navigate(Graph.AUTHENTICATION) {
-                        popUpTo(Graph.BASE) { inclusive = true }
+                    navController?.navigate(NavGraph.Auth) {
+                        popUpTo(NavGraph.Base) { inclusive = true }
                     }
                 }
             ) {

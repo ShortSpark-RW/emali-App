@@ -50,6 +50,10 @@ kotlin {
             implementation(libs.coil.network.okhttp)
             implementation(libs.androidx.core.splashscreen)
             implementation(libs.android.material)
+            // Add explicit AndroidX Material3 to ensure PullRefresh is available
+            implementation(platform("androidx.compose:compose-bom:2024.10.00"))
+            implementation("androidx.compose.material3:material3")
+            implementation("androidx.compose.foundation:foundation")
         }
         commonMain.dependencies {
             implementation(compose.runtime)

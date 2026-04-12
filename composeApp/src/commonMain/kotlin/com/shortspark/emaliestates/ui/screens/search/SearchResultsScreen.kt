@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.layout.WindowInsets
 import com.shortspark.emaliestates.domain.Property
+import com.shortspark.emaliestates.domain.SaleType
 import com.shortspark.emaliestates.home.presentation.PropertyCard
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -199,14 +200,11 @@ private fun Property.toUiModel(): com.shortspark.emaliestates.home.presentation.
     return com.shortspark.emaliestates.home.presentation.PropertyUiModel(
         id = id,
         title = title,
-        location = placeName ?: locationId ?: "Unknown location",
+        location = placeName ?: address ?: locationId ?: "Unknown location",
         price = formatPrice(price),
-        rating = 0f,
+        priceUnit = if (saleType == SaleType.RENT) "month" else null,
         badge = type.name,
-        imageUrl = featuredImg,
-        bedrooms = bedrooms,
-        bathrooms = bathrooms,
-        area = if (area > 0) "${area.toInt()} m²" else null
+        imageUrl = featuredImg
     )
 }
 

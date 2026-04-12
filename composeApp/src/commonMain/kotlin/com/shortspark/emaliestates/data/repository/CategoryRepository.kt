@@ -5,10 +5,9 @@ import com.shortspark.emaliestates.data.remote.CategoryApi
 import com.shortspark.emaliestates.domain.Category
 import com.shortspark.emaliestates.domain.RequestState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
-import kotlin.time.ExperimentalTime
 import toInstantSafe
+import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 class CategoryRepository(
@@ -17,7 +16,9 @@ class CategoryRepository(
 ) {
     private val queries = localDatabase.categoryQueries
 
-    suspend fun getCategories(): RequestState<List<Category>> = withContext(Dispatchers.IO) {
+    suspend fun getCategories(): RequestState<List<Category>> = withContext(Dispatchers.Default) {
+        val localCategories = getLocalCategories()
+        
         return@withContext try {
             val response = categoryApi.fetchAllCategories()
             val categories = response.data ?: emptyList()
@@ -29,9 +30,6 @@ class CategoryRepository(
                         id = category.id,
                         name = category.name,
                         details = category.details,
-                        parentId = category.parentId,
-                        sortOrder = category.sortOrder.toLong(),
-                        isActive = if (category.isActive) 1L else 0L,
                         createdAt = category.createdAt.toString(),
                         updatedAt = category.updatedAt.toString()
                     )
@@ -40,11 +38,16 @@ class CategoryRepository(
 
             RequestState.Success(categories)
         } catch (e: Exception) {
-            RequestState.Error(e.message ?: "Failed to fetch categories")
+            // Fallback to local data if network fails
+            if (localCategories.isNotEmpty()) {
+                RequestState.Success(localCategories)
+            } else {
+                RequestState.Error(e.message ?: "Failed to fetch categories and no local data found")
+            }
         }
     }
 
-    suspend fun getCategoryById(id: String): RequestState<Category?> = withContext(Dispatchers.IO) {
+    suspend fun getCategoryById(id: String): RequestState<Category?> = withContext(Dispatchers.Default) {
         return@withContext try {
             val response = categoryApi.fetchCategoryById(id)
             val category = response.data
@@ -55,9 +58,6 @@ class CategoryRepository(
                     id = it.id,
                     name = it.name,
                     details = it.details,
-                    parentId = it.parentId,
-                    sortOrder = it.sortOrder.toLong(),
-                    isActive = if (it.isActive) 1L else 0L,
                     createdAt = it.createdAt.toString(),
                     updatedAt = it.updatedAt.toString()
                 )
@@ -70,18 +70,19 @@ class CategoryRepository(
     }
 
     // Local only: get all categories from cache
-    suspend fun getLocalCategories(): List<Category> = withContext(Dispatchers.IO) {
+    suspend fun getLocalCategories(): List<Category> = withContext(Dispatchers.Default) {
         queries.selectAllCategories().executeAsList().map { row ->
             Category(
                 id = row.id,
                 name = row.name,
                 details = row.details,
-                parentId = row.parentId,
-                sortOrder = row.sortOrder.toInt(),
-                isActive = row.isActive == 1L,
                 createdAt = row.createdAt.toInstantSafe(),
                 updatedAt = row.updatedAt.toInstantSafe()
             )
         }
+    }
+
+    suspend fun clearCategories() = withContext(Dispatchers.Default) {
+        queries.removeAllCategories()
     }
 }

@@ -28,6 +28,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -39,9 +41,8 @@ import androidx.navigation.NavController
 import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
 import com.shortspark.emaliestates.domain.RequestState
 import com.shortspark.emaliestates.domain.auth.User
-import com.shortspark.emaliestates.navigation.AuthScreen
-import com.shortspark.emaliestates.navigation.BaseScreen
-import com.shortspark.emaliestates.navigation.Graph
+import com.shortspark.emaliestates.navigation.NavGraph
+import com.shortspark.emaliestates.navigation.Screen
 import com.shortspark.emaliestates.util.components.auth.EmailOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.LogoSection
 import com.shortspark.emaliestates.util.components.auth.OrDivider
@@ -52,6 +53,8 @@ import com.shortspark.emaliestates.util.components.common.MessageType
 import com.shortspark.emaliestates.util.components.common.AppButton
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.compose.material3.CircularProgressIndicator
+import com.shortspark.emaliestates.util.helpers.Validation
 
 data class SignInUiState(
     val email: String = "",
@@ -61,23 +64,6 @@ data class SignInUiState(
     val passwordError: String? = null
 )
 
-private fun validateEmail(email: String): String? {
-    val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
-    return when {
-        email.isBlank() -> "Email is required"
-        !emailRegex.matches(email) -> "Enter a valid email address"
-        else -> null
-    }
-}
-private fun validatePassword(password: String): String? {
-    val passwordRegex = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")
-    return when {
-        password.isBlank() -> "Password is required"
-        password.length < 8 -> "Password must be at least 8 characters long"
-        !passwordRegex.matches(password) -> "Password must contain an uppercase letter, a number, and a special character"
-        else -> null
-    }
-}
 
 @Composable
 fun SigninScreen(
@@ -89,28 +75,46 @@ fun SigninScreen(
     // Navigate to home when user becomes authenticated (after login OR Google sign-in)
     LaunchedEffect(authState.currentUser) {
         if (authState.currentUser != null) {
-            navController.navigate(Graph.BASE) {
-                popUpTo(Graph.AUTHENTICATION) { inclusive = true }
+            navController.navigate(NavGraph.Base) {
+                popUpTo(NavGraph.Auth) { inclusive = true }
             }
         }
     }
 
-    SigninContent(
-        isLoading = authState.isLoading && authState.operation == com.shortspark.emaliestates.auth.viewModel.AuthOperation.Login,
-        errorMessage = authState.errorMessage,
-        onLogin = { email, password ->
-            authViewModel.login(email, password)
-        },
-        onClearError = {
-            authViewModel.clearError()
-        },
-        onSignup = {
-            navController.navigate(AuthScreen.SignUp.route)
-        },
-        onForgotPassword = {
-            navController.navigate(AuthScreen.ForgotPassword.route)
+    // Unified loading overlay for any auth operation
+    Box(modifier = Modifier.fillMaxSize()) {
+        SigninContent(
+            isLoading = authState.isLoading && authState.operation == com.shortspark.emaliestates.auth.viewModel.AuthOperation.Login,
+            errorMessage = authState.errorMessage,
+            onLogin = { email, password ->
+                authViewModel.login(email, password)
+            },
+            onClearError = {
+                authViewModel.clearError()
+            },
+            onSignup = {
+                navController.navigate(Screen.Auth.SignUp)
+            },
+            onForgotPassword = {
+                navController.navigate(Screen.Auth.ForgotPassword)
+            }
+        )
+
+        // Full-screen loading overlay when any auth operation is in progress
+        if (authState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.secondary,
+                    strokeWidth = 3.dp
+                )
+            }
         }
-    )
+    }
 }
 
 @Composable
@@ -159,7 +163,7 @@ fun SigninContent(
             EmailOutlinedTextField(
                 email = state.email,
                 onEmailChange = {
-                    val emailError = validateEmail(it)
+                    val emailError = Validation.validateEmail(it)
                     state = state.copy(email = it, emailError = emailError)
                 },
                 isEmailFocused = isEmailFocused,
@@ -175,7 +179,7 @@ fun SigninContent(
             PasswordOutlinedTextField(
                 value = state.password,
                 onValueChange = {
-                    val passwordError = validatePassword(it)
+                    val passwordError = Validation.validatePassword(it)
                     state = state.copy(password = it, passwordError = passwordError)
                 },
                 isPasswordFocused = isPasswordFocused,
@@ -231,8 +235,8 @@ fun SigninContent(
                 loading = isLoading,
                 onClick = {
                     // Validate inputs before login
-                    val emailError = validateEmail(state.email)
-                    val passwordError = validatePassword(state.password)
+                    val emailError = Validation.validateEmail(state.email)
+                    val passwordError = Validation.validatePassword(state.password)
                     if (emailError == null && passwordError == null) {
                         onLogin(state.email, state.password)
                     } else {

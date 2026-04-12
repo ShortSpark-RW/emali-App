@@ -34,8 +34,8 @@ data class User(
     val latitude: Float? = null,
     val longitude: Float? = null,
     val locationAddress: String? = null,
-    val createdAt: Instant,
-    val updatedAt: Instant
+    val createdAt: Instant? = null,
+    val updatedAt: Instant? = null
 )
 
 @Serializable

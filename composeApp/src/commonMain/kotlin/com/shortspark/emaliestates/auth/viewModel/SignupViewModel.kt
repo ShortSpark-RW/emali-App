@@ -7,12 +7,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.shortspark.emaliestates.data.AuthSDK
 import com.shortspark.emaliestates.domain.RequestState
-import com.shortspark.emaliestates.domain.auth.SignupRequest
 import com.shortspark.emaliestates.util.components.auth.Gender
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.*
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class SignupViewModel(
-    private val sdk: AuthSDK
+    private val sdk: AuthSDK,
+    private val authViewModel: AuthViewModel
 ) : ViewModel() {
 
     // Step 1 fields
@@ -55,6 +62,8 @@ class SignupViewModel(
     var fullNameError by mutableStateOf<String?>(null)
         private set
     var phoneError by mutableStateOf<String?>(null)
+        private set
+    var dateError by mutableStateOf<String?>(null)
         private set
 
     // Signup state
@@ -112,6 +121,7 @@ class SignupViewModel(
         day = newDay
         month = newMonth
         year = newYear
+        dateError = null // Clear error when user changes date
     }
 
     // Validate Step 1
@@ -151,20 +161,75 @@ class SignupViewModel(
     fun validateStep2(): Boolean {
         var isValid = true
 
-        if (fullName.isBlank()) {
-            fullNameError = "Full name is required"
-            isValid = false
-        } else if (fullName.trim().split(" ").size < 2) {
-            fullNameError = "Please enter your full name (at least first and last name)"
-            isValid = false
+        // Validate full name
+        val trimmedName = fullName.trim()
+        when {
+            trimmedName.isBlank() -> {
+                fullNameError = "Full name is required"
+                isValid = false
+            }
+            trimmedName.length < 2 -> {
+                fullNameError = "Name is too short"
+                isValid = false
+            }
+            trimmedName.length > 100 -> {
+                fullNameError = "Name is too long (max 100 characters)"
+                isValid = false
+            }
+            !trimmedName.matches(Regex("^[a-zA-Z\\s.'-]+$")) -> {
+                fullNameError = "Name contains invalid characters"
+                isValid = false
+            }
+            trimmedName.split("\\s+".toRegex()).filter { it.isNotBlank() }.size < 2 -> {
+                fullNameError = "Please enter both first and last name"
+                isValid = false
+            }
         }
 
+        // Validate phone number - must be digits only after stripping non-digits
         val rawPhone = phoneNumber.filter { it.isDigit() }
-        if (rawPhone.isBlank()) {
-            phoneError = "Phone number is required"
-            isValid = false
-        } else if (rawPhone.length < 7) {
-            phoneError = "Please enter a valid phone number"
+        when {
+            rawPhone.isBlank() -> {
+                phoneError = "Phone number is required"
+                isValid = false
+            }
+            rawPhone.length < 9 -> {
+                phoneError = "Phone number is too short"
+                isValid = false
+            }
+            rawPhone.length > 15 -> {
+                phoneError = "Phone number is too long"
+                isValid = false
+            }
+            !rawPhone.all { it in '0'..'9' } -> {
+                phoneError = "Phone number must contain only digits"
+                isValid = false
+            }
+        }
+
+        // Validate date of birth
+        dateError = null
+        try {
+            val now = Clock.System.now()
+            val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val birthDate = LocalDate(year, month, day)
+
+            // Check if date is in the future
+            if (birthDate > today) {
+                dateError = "Date of birth cannot be in the future"
+                isValid = false
+            }
+
+            // Check minimum age (e.g., 18 years)
+            val minAge = 18
+            val minBirthDate = today.minus(DatePeriod(years = minAge))
+            if (birthDate > minBirthDate) {
+                dateError = "You must be at least $minAge years old"
+                isValid = false
+            }
+        } catch (e: Exception) {
+            // Invalid date (e.g., February 30)
+            dateError = "Invalid date of birth"
             isValid = false
         }
 
@@ -177,11 +242,21 @@ class SignupViewModel(
             return
         }
 
-        _signupState.value = RequestState.Loading
+        // Set global auth state
+        authViewModel.setLoading(true)
+        authViewModel.setOperation(AuthOperation.Signup)
+        authViewModel.setAuthError(null)
 
         viewModelScope.launch {
-            val dialCode = selectedCountry.dialCode.replace("+", "")
-            val fullPhone = "$dialCode$phoneNumber"
+            // Format phone number: strip all non-digits from phone input
+            val cleanPhoneNumber = phoneNumber.filter { it.isDigit() }
+            // Get clean country dial code (digits only, no +)
+            val cleanDialCode = selectedCountry.dialCode.filter { it.isDigit() }
+            // Combine: full international number without + (e.g., 250781234567)
+            // Backend typically accepts E.164 without the plus, or we could include it
+            val fullPhone = "$cleanDialCode$cleanPhoneNumber"
+
+            // Validate date of birth
             val dateOfBirth = "${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
 
             val result = sdk.signup(
@@ -192,6 +267,14 @@ class SignupViewModel(
                 gender = gender.name,
                 dateOfBirth = dateOfBirth
             )
+
+            // Reset global auth state
+            authViewModel.setLoading(false)
+            authViewModel.setOperation(AuthOperation.Idle)
+
+            if (result is RequestState.Error) {
+                authViewModel.setAuthError(result.message)
+            }
 
             _signupState.value = result
         }
@@ -219,6 +302,7 @@ class SignupViewModel(
         termsError = null
         fullNameError = null
         phoneError = null
+        dateError = null
         resetState()
     }
 

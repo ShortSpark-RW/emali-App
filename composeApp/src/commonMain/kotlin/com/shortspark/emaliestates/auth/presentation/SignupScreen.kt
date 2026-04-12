@@ -21,10 +21,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -33,8 +35,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.shortspark.emaliestates.navigation.AuthScreen
-import com.shortspark.emaliestates.navigation.BaseScreen
+import com.shortspark.emaliestates.navigation.NavGraph
+import com.shortspark.emaliestates.navigation.Screen
 import com.shortspark.emaliestates.util.components.auth.EmailOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.LogoSection
 import com.shortspark.emaliestates.util.components.auth.OrDivider
@@ -42,20 +44,40 @@ import com.shortspark.emaliestates.util.components.auth.PasswordOutlinedTextFiel
 import com.shortspark.emaliestates.util.components.auth.SocialAuthButtons
 import com.shortspark.emaliestates.util.components.common.AppButton
 import com.shortspark.emaliestates.auth.viewModel.SignupViewModel
-import com.shortspark.emaliestates.navigation.Graph
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.compose.material3.CircularProgressIndicator
+import com.shortspark.emaliestates.auth.viewModel.AuthViewModel
 
 
 @Composable
 fun SignupScreen(
     navController: NavController,
 ) {
-    val parentEntry = remember(navController) { navController.getBackStackEntry(Graph.AUTHENTICATION) }
+    val parentEntry = remember(navController) { navController.getBackStackEntry(NavGraph.Auth) }
     val viewModel: SignupViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
+    val authViewModel: AuthViewModel = koinViewModel()
+    val authState by authViewModel.authState.collectAsState()
 
-    SignupContent(navController, viewModel)
+    Box(modifier = Modifier.fillMaxSize()) {
+        SignupContent(navController, viewModel)
+
+        // Unified loading overlay
+        if (authState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.secondary,
+                    strokeWidth = 3.dp
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -184,7 +206,7 @@ fun SignupContent(
                         color = MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.clickable {
-                            navController.navigate(AuthScreen.ForgotPassword.route)
+                            navController.navigate(Screen.Auth.ForgotPassword)
                         }
                     )
                 }
@@ -214,7 +236,7 @@ fun SignupContent(
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
                 onClick = {
                     if (viewModel.validateStep1()) {
-                        navController.navigate(AuthScreen.SignUp2.route)
+                        navController.navigate(Screen.Auth.SignUp2)
                     }
                 }
             )
@@ -238,7 +260,7 @@ fun SignupContent(
                     }
                 },
                 modifier = Modifier.clickable {
-                    navController.navigate(AuthScreen.SignIn.route)
+                    navController.navigate(Screen.Auth.SignIn)
                 },
                 color = MaterialTheme.colorScheme.onBackground,
             )

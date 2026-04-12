@@ -16,9 +16,9 @@ class PropertyApi(
 
     suspend fun fetchAllProperties(): ApiSuccessResponse<List<Property>> {
         println("INFO: Fetching properties...")
-        val response = httpClient.get("${AppConstants.ALL_PROPERTIES_ENDPOINT}/properties?limit=10&page=1")
+        val response = httpClient.get("${AppConstants.ALL_PROPERTIES_ENDPOINT}/properties?limit=100&page=1&include=place,location,owner,category")
         return when (response.status.value) {
-            in 200..299 -> response.body()
+            in 200..299 -> response.body<ApiSuccessResponse<List<Property>>>()
             else -> {
                 val error = response.body<ApiErrorResponse>()
                 throw ApiException(
@@ -32,9 +32,9 @@ class PropertyApi(
 
     suspend fun fetchPropertyById(id: String): ApiSuccessResponse<Property> {
         println("INFO: Fetching property by ID...")
-        val response = httpClient.get("${AppConstants.ALL_PROPERTIES_ENDPOINT}/properties/$id")
+        val response = httpClient.get("${AppConstants.ALL_PROPERTIES_ENDPOINT}/properties/$id?include=place,location,owner,category")
         return when (response.status.value) {
-            in 200..299 -> response.body()
+            in 200..299 -> response.body<ApiSuccessResponse<Property>>()
             else -> {
                 val error = response.body<ApiErrorResponse>()
                 throw ApiException(
@@ -60,6 +60,7 @@ class PropertyApi(
         println("INFO: Searching properties with filters...")
         val response = httpClient.get("${AppConstants.ALL_PROPERTIES_ENDPOINT}/properties/search") {
             url {
+                parameter("include", "place,location,owner,category")
                 query?.let { parameter("q", it) }
                 propertyType?.let { parameter("type", it) }
                 minPrice?.let { parameter("min_price", it) }
@@ -72,7 +73,7 @@ class PropertyApi(
             }
         }
         return when (response.status.value) {
-            in 200..299 -> response.body()
+            in 200..299 -> response.body<ApiSuccessResponse<List<Property>>>()
             else -> {
                 val error = response.body<ApiErrorResponse>()
                 throw ApiException(

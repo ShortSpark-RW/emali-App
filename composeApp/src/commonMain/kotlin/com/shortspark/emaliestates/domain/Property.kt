@@ -48,7 +48,13 @@ data class Property(
     val categoryId: String? = null,
     val placeId: String? = null,
 
-    // Denormalized relationship fields
+    // Nested relationship fields from API
+    val place: Place? = null,
+    val location: Location? = null,
+    val owner: User? = null,
+    val category: Category? = null,
+
+    // Denormalized relationship fields (used for local DB and easy access)
     val placeName: String? = null,
     val categoryName: String? = null,
     val ownerName: String? = null,
@@ -83,5 +89,3 @@ enum class FurnishingType {
     SEMI_FURNISHED,
     UNFURNISHED
 }
-
-

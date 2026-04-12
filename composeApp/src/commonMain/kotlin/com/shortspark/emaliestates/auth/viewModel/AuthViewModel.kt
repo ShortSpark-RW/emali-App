@@ -63,6 +63,23 @@ class AuthViewModel(
         _authState.value = _authState.value.block()
     }
 
+    // Public methods for other ViewModels to update auth state (unified loading)
+    fun setLoading(isLoading: Boolean) {
+        updateState { copy(isLoading = isLoading) }
+    }
+
+    fun setOperation(operation: AuthOperation) {
+        updateState { copy(operation = operation) }
+    }
+
+    fun setAuthError(errorMessage: String?) {
+        updateState { copy(errorMessage = errorMessage) }
+    }
+
+    fun clearAuthError() {
+        updateState { copy(errorMessage = null) }
+    }
+
     // ==================== Email/Password Authentication ====================
 
     /**
@@ -333,6 +350,16 @@ class AuthViewModel(
 
     /**
      * Sign in with Google using KMAuth
+     *
+     * Flow:
+     * 1. Call `googleAuthManager.signIn()` which opens Google account picker UI
+     * 2. User selects account or cancels
+     * 3. On success, we get Google ID token and send to backend via `sdk.google(idToken)`
+     * 4. Backend returns user data, we update auth state
+     *
+     * Note: If user cancels (presses back), KMAuth logs:
+     * "ERROR innerExceptionHandler: google signIn failed: GetCredentialCancellationException"
+     * This is expected and harmless - we handle it by resetting to idle state without error.
      */
     fun signInWithGoogle() {
         updateState { copy(operation = AuthOperation.GoogleSignIn, isLoading = true, errorMessage = null) }
@@ -470,14 +497,32 @@ class AuthViewModel(
 
     // ==================== Error Handling ====================
 
+    /**
+     * Checks if an error message indicates a user cancellation.
+     *
+     * Google Sign-In via KMAuth/AndroidX Credentials library logs cancellations as ERROR,
+     * but this is expected user behavior (pressing back or dismissing the sign-in UI).
+     * We treat these as non-errors and reset to idle state.
+     *
+     * Patterns matched:
+     * - "cancel" / "cancelled" (case-insensitive)
+     * - "GetCredentialCancellationException" (AndroidX Credentials cancellation exception)
+     */
+    private fun isUserCancellation(message: String): Boolean {
+        val lowerMessage = message.lowercase()
+        return lowerMessage.contains("cancel") ||
+               lowerMessage.contains("cancelled") ||
+               lowerMessage.contains("cancellationexception") ||
+               lowerMessage.contains("user cancelled")
+    }
+
     private fun handleAuthError(message: String, operation: AuthOperation) {
-        // Check if it's a user cancellation
-        val isCancellation = message.contains("cancel", ignoreCase = true)
-            || message.contains("cancelled", ignoreCase = true)
-            || message.contains("GetCredentialCancellationException", ignoreCase = true)
+        // Check if it's a user cancellation - normal and expected
+        val isCancellation = isUserCancellation(message)
 
         if (isCancellation && operation == AuthOperation.GoogleSignIn) {
-            // User cancelled Google sign-in - reset to idle without error
+            // User cancelled Google sign-in - reset to idle without showing error
+            // Note: This will appear as "ERROR" in logcat from KMAuth library, but is harmless.
             updateState {
                 AuthState(
                     operation = AuthOperation.Idle,
@@ -485,6 +530,7 @@ class AuthViewModel(
                 )
             }
         } else {
+            // Real error - show to user
             updateState {
                 AuthState(
                     operation = operation,

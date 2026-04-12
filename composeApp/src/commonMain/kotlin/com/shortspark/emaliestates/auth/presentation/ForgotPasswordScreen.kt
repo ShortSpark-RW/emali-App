@@ -31,7 +31,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.shortspark.emaliestates.navigation.AuthScreen
+import com.shortspark.emaliestates.navigation.Screen
 import com.shortspark.emaliestates.util.components.auth.EmailOutlinedTextField
 import com.shortspark.emaliestates.util.components.auth.LogoSection
 import com.shortspark.emaliestates.util.components.common.AppButton
@@ -52,7 +52,6 @@ fun ForgotPasswordContent(
 
     var email by remember { mutableStateOf("") }
     var isEmailFocused by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -113,7 +112,7 @@ fun ForgotPasswordContent(
                         }
                     },
                     modifier = Modifier.clickable {
-                        navController.navigate(AuthScreen.SignUp.route)
+                        navController.navigate(Screen.Auth.SignUp)
                     },
                     color = MaterialTheme.colorScheme.onBackground,
                 )
@@ -132,7 +131,7 @@ fun ForgotPasswordContent(
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)),
                     onClick = {
                         navController.currentBackStackEntry?.savedStateHandle?.set("email", email)
-                        navController.navigate(AuthScreen.VerifyOtp.route)
+                        navController.navigate(Screen.Auth.VerifyOtp)
                     }
                 )
             }
